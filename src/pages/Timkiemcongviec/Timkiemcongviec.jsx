@@ -1,3 +1,5 @@
+import './Timkiemcongviec.css';
+
 const navItems = ['Việc làm', 'Doanh nghiệp', 'Về chúng tôi'];
 
 const jobSuggestions = [
