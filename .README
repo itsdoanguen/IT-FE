@@ -1,0 +1,41 @@
+# IT-FE
+
+Dự án ReactJS khởi tạo ban đầu cho màn hình đăng tin tuyển dụng.
+
+## Nội dung chính
+
+- Giao diện mặc định đã được dựng sẵn bằng React.
+- Ngôn ngữ hiển thị là tiếng Việt.
+- Màu sắc và nền trang dùng theo biến trong `global.css`.
+
+## Yêu cầu
+
+- Node.js 18 trở lên.
+- npm đi kèm Node.js.
+
+## Cài đặt và chạy
+
+```bash
+npm install
+npm run dev
+```
+
+## Build sản phẩm
+
+```bash
+npm run build
+```
+
+## Cấu trúc nhanh
+
+- `index.html`: điểm vào của Vite.
+- `src/main.jsx`: khởi tạo React.
+- `src/App.jsx`: giao diện mặc định.
+- `src/app.css`: style riêng cho trang.
+- `global.css`: hệ biến màu, font và các style dùng chung.
+
+## Tuỳ chỉnh nhanh
+
+- Muốn đổi palette, sửa các biến `--color-*` trong `global.css`.
+- Muốn đổi nội dung trang, sửa `src/App.jsx`.
+- Muốn thay kiểu hiển thị, sửa `src/app.css`.
