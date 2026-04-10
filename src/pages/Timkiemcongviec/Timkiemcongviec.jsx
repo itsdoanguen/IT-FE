@@ -1,4 +1,5 @@
 import './Timkiemcongviec.css';
+import danangImage from './danang.jpg';
 
 const navItems = ['Việc làm', 'Doanh nghiệp', 'Về chúng tôi'];
 
@@ -29,7 +30,19 @@ const jobSuggestions = [
   },
 ];
 
-const quickFilters = ['Tìm kiếm việc làm, công ty...', 'Địa điểm mong muốn', 'Mức lương mong muốn'];
+const daNangWards = [
+  'phường Hải Châu',
+  'phường Hòa Cường',
+  'phường Thanh Khê',
+  'phường An Khê',
+  'phường An Hải',
+  'phường Sơn Trà',
+  'phường Ngũ Hành Sơn',
+  'phường Hòa Khánh',
+  'phường Hải Vân',
+  'phường Cẩm Lệ',
+  'phường Liên chiểu',
+];
 
 const footerLinks = ['Chính sách bảo mật', 'Điều khoản dịch vụ', 'Liên hệ', 'Cài đặt Cookie'];
 
@@ -101,14 +114,35 @@ function Timkiemcongviec() {
 
             <div className="search-panel" aria-label="Thanh tìm kiếm việc làm">
               <div className="search-inputs">
-                {quickFilters.map((filter, index) => (
-                  <label className="search-field" key={filter}>
-                    <span className="search-icon" aria-hidden="true">
-                      {index === 0 ? '⌕' : index === 1 ? '⌖' : '◫'}
-                    </span>
-                    <input type="text" defaultValue={index === 0 ? '' : filter} placeholder={index === 0 ? filter : ''} />
-                  </label>
-                ))}
+                <label className="search-field">
+                  <span className="search-icon" aria-hidden="true">
+                    ⌕
+                  </span>
+                  <input type="text" placeholder="Tìm kiếm việc làm, công ty..." />
+                </label>
+
+                <label className="search-field">
+                  <span className="search-icon" aria-hidden="true">
+                    ⌖
+                  </span>
+                  <select defaultValue="" aria-label="Địa điểm mong muốn">
+                    <option value="" disabled>
+                      Địa điểm mong muốn
+                    </option>
+                    {daNangWards.map((ward) => (
+                      <option key={ward} value={ward}>
+                        {ward}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="search-field">
+                  <span className="search-icon" aria-hidden="true">
+                    ◫
+                  </span>
+                  <input type="number" min="0" placeholder="Mức lương mong muốn" />
+                </label>
               </div>
 
               <div className="search-actions">
@@ -124,7 +158,9 @@ function Timkiemcongviec() {
           </div>
 
           <div className="hero-visual" aria-hidden="true">
-            <div className="hero-visual-overlay" />
+            <div className="hero-visual-overlay">
+              <img src={danangImage} alt="Hình ảnh minh họa công việc" />
+            </div>
           </div>
         </section>
 
