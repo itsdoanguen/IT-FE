@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { recruitmentPosts } from '../../data';
 import './Danhsachtuyendung.css';
 
@@ -25,23 +26,29 @@ function LocationIcon() {
 }
 
 function Danhsachtuyendung() {
+  const routerLocation = useLocation();
+  const incomingJobs = Array.isArray(routerLocation.state?.jobs) ? routerLocation.state.jobs : null;
+  const sourcePosts = incomingJobs !== null ? incomingJobs : recruitmentPosts;
+
   const [keyword, setKeyword] = useState('');
-  const [location, setLocation] = useState('Tất cả');
+  const [selectedLocation, setSelectedLocation] = useState('Tất cả');
 
   const locations = useMemo(() => {
-    const uniqueLocations = Array.from(new Set(recruitmentPosts.map((post) => post.location)));
+    const uniqueLocations = Array.from(
+      new Set(sourcePosts.map((post) => post.location).filter(Boolean)),
+    );
     return ['Tất cả', ...uniqueLocations];
-  }, []);
+  }, [sourcePosts]);
 
   const filteredPosts = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase();
 
-    return recruitmentPosts.filter((post) => {
-      const matchTitle = post.title.toLowerCase().includes(normalizedKeyword);
-      const matchLocation = location === 'Tất cả' || post.location === location;
+    return sourcePosts.filter((post) => {
+      const matchTitle = String(post.title || '').toLowerCase().includes(normalizedKeyword);
+      const matchLocation = selectedLocation === 'Tất cả' || post.location === selectedLocation;
       return matchTitle && matchLocation;
     });
-  }, [keyword, location]);
+  }, [keyword, selectedLocation, sourcePosts]);
 
   return (
     <section className="recruitment-page">
@@ -66,8 +73,8 @@ function Danhsachtuyendung() {
               <LocationIcon />
               <select
                 className="recruitment-location-filter"
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
+                value={selectedLocation}
+                onChange={(event) => setSelectedLocation(event.target.value)}
               >
                 {locations.map((locationOption) => (
                   <option key={locationOption} value={locationOption}>

@@ -1,3 +1,7 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { fetchJobPosts } from '../../services/api';
 import './Timkiemcongviec.css';
 import danangImage from './danang.jpg';
 
@@ -47,6 +51,8 @@ const daNangWards = [
 const footerLinks = ['Chính sách bảo mật', 'Điều khoản dịch vụ', 'Liên hệ', 'Cài đặt Cookie'];
 
 function JobCard({ job }) {
+  const badges = Array.isArray(job.badges) && job.badges.length > 0 ? job.badges : ['Tuyển dụng'];
+
   return (
     <article className="job-card">
       <div className="job-card-top">
@@ -60,7 +66,7 @@ function JobCard({ job }) {
       <p>{job.description}</p>
 
       <div className="job-tags">
-        {job.badges.map((badge) => (
+        {badges.map((badge) => (
           <span key={badge}>{badge}</span>
         ))}
       </div>
@@ -73,6 +79,49 @@ function JobCard({ job }) {
 }
 
 function Timkiemcongviec() {
+  const navigate = useNavigate();
+  const [keyword, setKeyword] = useState('');
+  const [location, setLocation] = useState('');
+  const [salary, setSalary] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+
+  const handleClear = () => {
+    setKeyword('');
+    setLocation('');
+    setSalary('');
+    setSearchError('');
+  };
+
+  const handleSearch = async (event) => {
+    event.preventDefault();
+    setIsSearching(true);
+    setSearchError('');
+
+    try {
+      const jobs = await fetchJobPosts({
+        q: keyword,
+        dia_diem: location,
+        luong_min: salary,
+      });
+
+      navigate('/recruitments', {
+        state: {
+          jobs,
+          filters: {
+            q: keyword,
+            dia_diem: location,
+            luong_min: salary,
+          },
+        },
+      });
+    } catch (error) {
+      setSearchError(error.message || 'Không thể tải dữ liệu công việc.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <div className="job-search-page">
       <header className="job-topbar">
@@ -112,20 +161,29 @@ function Timkiemcongviec() {
               dành cho các chuyên gia ưu tú.
             </p>
 
-            <div className="search-panel" aria-label="Thanh tìm kiếm việc làm">
+            <form className="search-panel" aria-label="Thanh tìm kiếm việc làm" onSubmit={handleSearch}>
               <div className="search-inputs">
                 <label className="search-field">
                   <span className="search-icon" aria-hidden="true">
                     ⌕
                   </span>
-                  <input type="text" placeholder="Tìm kiếm việc làm, công ty..." />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm việc làm, công ty..."
+                    value={keyword}
+                    onChange={(event) => setKeyword(event.target.value)}
+                  />
                 </label>
 
                 <label className="search-field">
                   <span className="search-icon" aria-hidden="true">
                     ⌖
                   </span>
-                  <select defaultValue="" aria-label="Địa điểm mong muốn">
+                  <select
+                    value={location}
+                    onChange={(event) => setLocation(event.target.value)}
+                    aria-label="Địa điểm mong muốn"
+                  >
                     <option value="" disabled>
                       Địa điểm mong muốn
                     </option>
@@ -141,20 +199,28 @@ function Timkiemcongviec() {
                   <span className="search-icon" aria-hidden="true">
                     ◫
                   </span>
-                  <input type="number" min="0" placeholder="Mức lương mong muốn" />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Mức lương mong muốn"
+                    value={salary}
+                    onChange={(event) => setSalary(event.target.value)}
+                  />
                 </label>
               </div>
 
               <div className="search-actions">
-                <button className="clear-link" type="button">
+                <button className="clear-link" type="button" onClick={handleClear}>
                   Xóa
                 </button>
-                <button className="search-button" type="button">
+                <button className="search-button" type="submit" disabled={isSearching}>
                   <span aria-hidden="true">⌕</span>
-                  Tìm kiếm
+                  {isSearching ? 'Đang tìm...' : 'Tìm kiếm'}
                 </button>
               </div>
-            </div>
+            </form>
+
+            {searchError ? <p className="search-error">{searchError}</p> : null}
           </div>
 
           <div className="hero-visual" aria-hidden="true">
