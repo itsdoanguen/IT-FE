@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchCandidates, fetchMatchedCandidates } from '../../services/api';
+import { buildCandidateDetailPath, buildInDevelopmentPath } from '../../constants/routes';
 import './Quanlyungvien.css';
 
 const TAB_OPTIONS = [
@@ -312,13 +313,18 @@ function Quanlyungvien() {
                     </div>
 
                     <div className="candidate-actions">
-                      <button type="button">Liên hệ</button>
+                      <button
+                        type="button"
+                        onClick={() => navigate(buildInDevelopmentPath('candidate-contact'))}
+                      >
+                        Liên hệ
+                      </button>
                       <button
                         type="button"
                         className="secondary"
                         onClick={() => {
                           const nextSearch = routeLocation.search || '';
-                          navigate(`/candidates/${candidate.candidate_id}${nextSearch}`, {
+                          navigate(`${buildCandidateDetailPath(candidate.candidate_id)}${nextSearch}`, {
                             state: { fromPath: routeLocation.pathname, fromSearch: routeLocation.search },
                           });
                         }}

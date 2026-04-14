@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { fetchCandidateDetail } from '../../services/api';
+import { ROUTES, buildInDevelopmentPath } from '../../constants/routes';
 import './Chitiethosoungvien.css';
 
 const DEFAULT_AVATAR =
@@ -100,7 +101,7 @@ function Chitiethosoungvien() {
               navigate(`${routeLocation.state.fromPath}${routeLocation.state.fromSearch || ''}`);
               return;
             }
-            navigate('/candidates');
+            navigate(ROUTES.CANDIDATES);
           }}
         >
           Quay lại danh sách ứng viên
@@ -126,8 +127,14 @@ function Chitiethosoungvien() {
                   <p className="candidate-profile-subtitle">Ứng viên tiềm năng cho vị trí phù hợp</p>
 
                   <div className="candidate-profile-actions">
-                    <button type="button">Liên hệ ngay</button>
-                    <button type="button" className="secondary">
+                    <button type="button" onClick={() => navigate(buildInDevelopmentPath('candidate-contact'))}>
+                      Liên hệ ngay
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => navigate(buildInDevelopmentPath('candidate-cv'))}
+                    >
                       Tải CV
                     </button>
                   </div>

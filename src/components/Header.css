@@ -92,6 +92,12 @@
   background-color: color-mix(in srgb, var(--color-primary) 11%, #ffffff);
 }
 
+.nav-item-button.is-active {
+  background-color: color-mix(in srgb, var(--color-primary) 14%, #ffffff);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 .header-actions {
   margin-left: auto;
   display: inline-flex;

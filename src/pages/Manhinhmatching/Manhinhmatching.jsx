@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import './Manhinhmatching.css';
 
 function Manhinhmatching() {
@@ -34,9 +35,7 @@ function Manhinhmatching() {
   };
 
   const handleMatching = () => {
-    // Xử lý matching và chuyển sang màn hình kết quả
-    alert('Thực hiện matching và chuyển sang màn hình Kết quả Matching');
-    // navigate('/ket-qua-matching'); // Khi có component
+    navigate(`${ROUTES.CANDIDATES}?source=matching`);
   };
 
   const handleReset = () => {
@@ -71,12 +70,12 @@ function Manhinhmatching() {
         </div>
 
         <nav className="topnav" aria-label="Điều hướng chính">
-          <Link className="topnav-link" to="/">
+          <button className="topnav-link" type="button" onClick={() => navigate(ROUTES.JOB_SEARCH)}>
             Trang chủ
-          </Link>
-          <a className="topnav-link is-active" href="#matching">
+          </button>
+          <button className="topnav-link is-active" type="button" onClick={() => navigate(ROUTES.MATCHING)}>
             Matching
-          </a>
+          </button>
         </nav>
       </header>
 

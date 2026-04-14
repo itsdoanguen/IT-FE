@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { recruitmentPosts } from '../../data';
-import { fetchJobPosts } from '../../services/api';
+import { ROUTES } from '../../constants/routes';
 import './Danhsachtuyendung.css';
 
 function SearchIcon() {
@@ -26,16 +26,8 @@ function LocationIcon() {
   );
 }
 
-function filterLocalPosts(posts, keyword, location) {
-  const normalizedKeyword = (keyword || '').trim().toLowerCase();
-  return posts.filter((post) => {
-    const matchTitle = (post.title || '').toLowerCase().includes(normalizedKeyword);
-    const matchLocation = location === 'Tất cả' || post.location === location;
-    return matchTitle && matchLocation;
-  });
-}
-
 function Danhsachtuyendung() {
+  const navigate = useNavigate();
   const routerLocation = useLocation();
   const incomingJobs = Array.isArray(routerLocation.state?.jobs) ? routerLocation.state.jobs : null;
   const sourcePosts = incomingJobs !== null ? incomingJobs : recruitmentPosts;
@@ -105,12 +97,10 @@ function Danhsachtuyendung() {
         </div>
 
         <div className="recruitment-list">
-          {isLoading ? (
-            <p className="recruitment-empty-state">Đang tải dữ liệu...</p>
-          ) : posts.length === 0 ? (
+          {filteredPosts.length === 0 ? (
             <p className="recruitment-empty-state">Không có tin tuyển dụng phù hợp.</p>
           ) : (
-            posts.map((post, index) => (
+            filteredPosts.map((post, index) => (
               <article
                 key={post.id}
                 className={`recruitment-row ${index % 2 === 0 ? 'is-light' : 'is-low'}`}
@@ -124,14 +114,35 @@ function Danhsachtuyendung() {
                 <div className="recruitment-location">
                   <span>{post.location}</span>
                 </div>
-                <button className="recruitment-apply-btn" type="button">
-                  Ứng tuyển
+                <button
+                  className="recruitment-apply-btn"
+                  type="button"
+                  onClick={() => {
+                    navigate(ROUTES.JOB_DETAIL, {
+                      state: {
+                        recruitmentData: {
+                          id: post.id,
+                          title: post.title,
+                          jobName: post.title,
+                          companyName: post.companyName || 'Doanh nghiệp tuyển dụng',
+                          salary: post.salary || 'Thỏa thuận',
+                          location: post.location || 'Chưa cập nhật',
+                          employmentType: post.employmentType || 'Toàn thời gian',
+                          deadline: post.deadline || 'Chưa cập nhật',
+                          description: post.summary || post.description || '',
+                          requirements: post.requirements || 'Trao đổi trong quá trình phỏng vấn.',
+                          benefits: post.benefits || 'Theo chính sách công ty.',
+                        },
+                      },
+                    });
+                  }}
+                >
+                  Xem chi tiết
                 </button>
               </article>
             ))
           )}
         </div>
-        {errorMessage ? <p className="recruitment-feedback-error">{errorMessage}</p> : null}
       </div>
     </section>
   );
