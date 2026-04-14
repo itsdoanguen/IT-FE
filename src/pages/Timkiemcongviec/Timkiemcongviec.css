@@ -39,7 +39,7 @@
 .job-nav-link,
 .job-login,
 .view-all-link,
-.footer-links a,
+.footer-links button,
 .clear-link {
   color: #566173;
   transition: color 0.2s ease, transform 0.2s ease;
@@ -49,9 +49,20 @@
 .job-nav-link:hover,
 .job-login:hover,
 .view-all-link:hover,
-.footer-links a:hover,
+.footer-links button:hover,
 .clear-link:hover {
   color: #0b3558;
+}
+
+.job-nav-link,
+.job-login,
+.view-all-link,
+.footer-links button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
 }
 
 .job-nav-link.is-active {

@@ -1,0 +1,35 @@
+export const ROUTES = {
+  HOME: '/tim-kiem-cong-viec',
+  JOB_SEARCH: '/tim-kiem-cong-viec',
+  RECRUITMENT_LIST: '/danh-sach-tuyen-dung',
+  JOB_DETAIL: '/chi-tiet-tuyen-dung',
+  JOB_POST: '/dang-tin-tuyen-dung',
+  MATCHING: '/man-hinh-matching',
+  CANDIDATES: '/quan-ly-ung-vien',
+  CANDIDATE_DETAIL: '/quan-ly-ung-vien/:id',
+  IN_DEVELOPMENT: '/in-development',
+};
+
+export const LEGACY_ROUTES = {
+  JOB_POST: '/Dangtintuyendung',
+  RECRUITMENT_LIST: '/recruitments',
+  MATCHING: '/matching',
+  JOB_SEARCH: '/search',
+  CANDIDATES: '/candidates',
+  CANDIDATE_DETAIL: '/candidates/:id',
+  JOB_DETAIL_TEMP: '/Chitiettuyendung/temp',
+  JOB_DETAIL: '/chitiettuyendung',
+};
+
+export function buildCandidateDetailPath(id) {
+  return `${ROUTES.CANDIDATES}/${id}`;
+}
+
+export function buildInDevelopmentPath(feature) {
+  if (!feature) {
+    return ROUTES.IN_DEVELOPMENT;
+  }
+
+  const query = new URLSearchParams({ feature });
+  return `${ROUTES.IN_DEVELOPMENT}?${query.toString()}`;
+}

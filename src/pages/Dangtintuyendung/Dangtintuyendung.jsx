@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 import './Dangtintuyendung.css';
 
 const requirementTags = ['ReactJS', 'HTML/CSS', 'REST API'];
@@ -103,10 +104,10 @@ function Dangtintuyendung() {
     }, 0);
   };
 
-  const handlePreview = () => {
+  const collectRecruitmentData = () => {
     const formElement = formRef.current;
     if (!formElement) {
-      return;
+      return null;
     }
 
     const formData = new FormData(formElement);
@@ -161,11 +162,37 @@ function Dangtintuyendung() {
 
     window.sessionStorage.setItem(draftStorageKey, JSON.stringify(draftData));
 
-    navigate('/Chitiettuyendung/temp', {
+    return recruitmentData;
+  };
+
+  const handlePreview = () => {
+    const recruitmentData = collectRecruitmentData();
+    if (!recruitmentData) {
+      return;
+    }
+
+    navigate(ROUTES.JOB_DETAIL, {
       state: {
         recruitmentData,
       },
     });
+  };
+
+  const handlePublish = () => {
+    const recruitmentData = collectRecruitmentData();
+    if (!recruitmentData) {
+      return;
+    }
+
+    navigate(ROUTES.JOB_DETAIL, {
+      state: {
+        recruitmentData,
+      },
+    });
+  };
+
+  const handleCancel = () => {
+    navigate(ROUTES.RECRUITMENT_LIST);
   };
 
   return (
@@ -339,10 +366,10 @@ function Dangtintuyendung() {
             <button className="btn btn-primary" type="button" onClick={handlePreview}>
               Xem trước
             </button>
-            <button className="btn btn-success" type="button">
+            <button className="btn btn-success" type="button" onClick={handlePublish}>
               Đăng tin
             </button>
-            <button className="btn btn-danger" type="button">
+            <button className="btn btn-danger" type="button" onClick={handleCancel}>
               Hủy
             </button>
           </div>

@@ -2,10 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { fetchJobPosts } from '../../services/api';
+import { ROUTES, buildInDevelopmentPath } from '../../constants/routes';
 import './Timkiemcongviec.css';
 import danangImage from './danang.jpg';
 
-const navItems = ['Việc làm', 'Doanh nghiệp', 'Về chúng tôi'];
+const navItems = [
+  { label: 'Việc làm', to: ROUTES.JOB_SEARCH },
+  { label: 'Doanh nghiệp', to: buildInDevelopmentPath('companies') },
+  { label: 'Về chúng tôi', to: buildInDevelopmentPath('about') },
+];
 
 const jobSuggestions = [
   {
@@ -48,7 +53,12 @@ const daNangWards = [
   'phường Liên chiểu',
 ];
 
-const footerLinks = ['Chính sách bảo mật', 'Điều khoản dịch vụ', 'Liên hệ', 'Cài đặt Cookie'];
+const footerLinks = [
+  { label: 'Chính sách bảo mật', to: buildInDevelopmentPath('privacy-policy') },
+  { label: 'Điều khoản dịch vụ', to: buildInDevelopmentPath('terms') },
+  { label: 'Liên hệ', to: buildInDevelopmentPath('contact') },
+  { label: 'Cài đặt Cookie', to: buildInDevelopmentPath('cookies') },
+];
 
 function JobCard({ job }) {
   const badges = Array.isArray(job.badges) && job.badges.length > 0 ? job.badges : ['Tuyển dụng'];
@@ -105,7 +115,7 @@ function Timkiemcongviec() {
         luong_min: salary,
       });
 
-      navigate('/recruitments', {
+      navigate(ROUTES.RECRUITMENT_LIST, {
         state: {
           jobs,
           filters: {
@@ -131,9 +141,14 @@ function Timkiemcongviec() {
 
         <nav className="job-nav" aria-label="Điều hướng chính">
           {navItems.map((item, index) => (
-            <a className={`job-nav-link ${index === 0 ? 'is-active' : ''}`} href="#" key={item}>
-              {item}
-            </a>
+            <button
+              className={`job-nav-link ${index === 0 ? 'is-active' : ''}`}
+              type="button"
+              onClick={() => navigate(item.to)}
+              key={item.label}
+            >
+              {item.label}
+            </button>
           ))}
         </nav>
 
@@ -145,9 +160,13 @@ function Timkiemcongviec() {
             </button>
             <button type="button">JP</button>
           </div>
-          <a className="job-login" href="#">
+          <button
+            className="job-login"
+            type="button"
+            onClick={() => navigate(buildInDevelopmentPath('login'))}
+          >
             Đăng nhập
-          </a>
+          </button>
         </div>
       </header>
 
@@ -236,9 +255,13 @@ function Timkiemcongviec() {
               <p className="eyebrow">Dành riêng cho bạn</p>
               <h2>Gợi ý công việc</h2>
             </div>
-            <a className="view-all-link" href="#">
+            <button
+              className="view-all-link"
+              type="button"
+              onClick={() => navigate(ROUTES.RECRUITMENT_LIST)}
+            >
               Xem tất cả danh sách <span aria-hidden="true">→</span>
-            </a>
+            </button>
           </div>
 
           <div className="job-grid">
@@ -257,10 +280,18 @@ function Timkiemcongviec() {
           </p>
 
           <div className="cta-actions">
-            <button className="primary-pill" type="button">
+            <button
+              className="primary-pill"
+              type="button"
+              onClick={() => navigate(buildInDevelopmentPath('create-profile'))}
+            >
               Tạo hồ sơ
             </button>
-            <button className="secondary-pill" type="button">
+            <button
+              className="secondary-pill"
+              type="button"
+              onClick={() => navigate(buildInDevelopmentPath('learn-more'))}
+            >
               Tìm hiểu thêm
             </button>
           </div>
@@ -275,9 +306,9 @@ function Timkiemcongviec() {
 
         <nav className="footer-links" aria-label="Liên kết chân trang">
           {footerLinks.map((item) => (
-            <a href="#" key={item}>
-              {item}
-            </a>
+            <button type="button" key={item.label} onClick={() => navigate(item.to)}>
+              {item.label}
+            </button>
           ))}
         </nav>
       </footer>

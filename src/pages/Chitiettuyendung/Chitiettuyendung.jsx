@@ -1,5 +1,6 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ROUTES, buildInDevelopmentPath } from "../../constants/routes";
 import "./Chitiettuyendung.css";
 
 const defaultRecruitmentData = {
@@ -20,19 +21,32 @@ const defaultRecruitmentData = {
 
 function Chitiettuyendung() {
   const location = useLocation();
+  const navigate = useNavigate();
   const recruitmentData = {
     ...defaultRecruitmentData,
     ...(location.state?.recruitmentData ?? {}),
   };
 
+  const recruitmentId =
+    location.state?.recruitmentData?.id ??
+    location.state?.recruitmentId ??
+    "";
+
   const handleEdit = () => {
-    // Logic chỉnh sửa
-    alert("Chỉnh sửa thông tin tuyển dụng");
+    navigate(buildInDevelopmentPath("job-edit"));
   };
 
   const handleDelete = () => {
-    // Logic xóa
-    alert("Xóa thông tin tuyển dụng");
+    navigate(buildInDevelopmentPath("job-delete"));
+  };
+
+  const handleViewCandidates = () => {
+    if (recruitmentId) {
+      navigate(`${ROUTES.CANDIDATES}?job_id=${encodeURIComponent(recruitmentId)}`);
+      return;
+    }
+
+    navigate(ROUTES.CANDIDATES);
   };
 
   return (
@@ -77,11 +91,14 @@ function Chitiettuyendung() {
         </section>
 
         <section className="actions">
-          <button className="edit-btn" onClick={handleEdit}>
+          <button className="edit-btn" type="button" onClick={handleEdit}>
             11. Chỉnh sửa thông tin đăng tuyển
           </button>
-          <button className="delete-btn" onClick={handleDelete}>
+          <button className="delete-btn" type="button" onClick={handleDelete}>
             12. Xóa thông tin đăng tuyển
+          </button>
+          <button className="edit-btn" type="button" onClick={handleViewCandidates}>
+            13. Xem danh sách ứng viên phù hợp
           </button>
         </section>
       </div>
