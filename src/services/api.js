@@ -1,4 +1,5 @@
 const DEFAULT_API_BASE_URL = '';
+const DEFAULT_CANDIDATE_API_TOKEN = 'mock-employer-access-token';
 
 function normalizeBaseUrl(baseUrl) {
   const normalizedBaseUrl = baseUrl === undefined || baseUrl === null ? DEFAULT_API_BASE_URL : baseUrl;
@@ -21,6 +22,81 @@ function buildQueryString(params = {}) {
 
   const queryString = searchParams.toString();
   return queryString ? `?${queryString}` : '';
+}
+
+function getCandidateAuthToken() {
+  const envToken = import.meta.env.VITE_CANDIDATE_API_TOKEN;
+  if (envToken && String(envToken).trim()) {
+    return String(envToken).trim();
+  }
+
+  if (typeof window !== 'undefined') {
+    const localStorageToken = window.localStorage.getItem('candidate_access_token');
+    if (localStorageToken && localStorageToken.trim()) {
+      return localStorageToken.trim();
+    }
+  }
+
+  return DEFAULT_CANDIDATE_API_TOKEN;
+}
+
+function candidateRequestHeaders() {
+  const authToken = getCandidateAuthToken();
+  return authToken ? { Authorization: `Bearer ${authToken}` } : {};
+}
+
+function setAuthToken(token) {
+  if (token && typeof window !== 'undefined') {
+    window.localStorage.setItem('candidate_access_token', token);
+  }
+}
+
+async function getTestToken() {
+  try {
+    const apiBaseUrl = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
+    const testTokenUrl = apiBaseUrl ? `${apiBaseUrl}/api/auth/test-token/` : '/api/auth/test-token/';
+    
+    const response = await fetch(testTokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`[TestToken] Failed to fetch test token: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    if (data?.access) {
+      console.log('[TestToken] Successfully obtained test token');
+      return data.access;
+    }
+
+    console.warn('[TestToken] No access token in response');
+    return null;
+  } catch (error) {
+    console.warn('[TestToken] Error fetching test token:', error.message);
+    return null;
+  }
+}
+
+function normalizeCandidateFilters(filters = {}) {
+  const availabilitySlots = Array.isArray(filters.availability_slots)
+    ? filters.availability_slots.filter(Boolean)
+    : [];
+
+  return {
+    page: filters.page ?? 1,
+    limit: filters.limit ?? 20,
+    sort: filters.sort || 'matching_desc',
+    q: filters.q || '',
+    location: filters.location || '',
+    salary_min: filters.salary_min || '',
+    salary_max: filters.salary_max || '',
+    availability_slots: availabilitySlots.length ? JSON.stringify(availabilitySlots) : '',
+  };
 }
 
 async function request(path, options = {}) {
@@ -66,4 +142,26 @@ export async function fetchJobPosts(filters = {}) {
   return [];
 }
 
-export { buildQueryString, request };
+export async function fetchCandidates(filters = {}) {
+  const candidateFilters = normalizeCandidateFilters(filters);
+  const queryString = buildQueryString(candidateFilters);
+  return request(`/api/v1/candidates/${queryString}`, {
+    headers: candidateRequestHeaders(),
+  });
+}
+
+export async function fetchMatchedCandidates(jobId, filters = {}) {
+  const candidateFilters = normalizeCandidateFilters(filters);
+  const queryString = buildQueryString(candidateFilters);
+  return request(`/api/v1/jobs/${jobId}/matched-candidates/${queryString}`, {
+    headers: candidateRequestHeaders(),
+  });
+}
+
+export async function fetchCandidateDetail(candidateId) {
+  return request(`/api/v1/candidates/${candidateId}/`, {
+    headers: candidateRequestHeaders(),
+  });
+}
+
+export { buildQueryString, request, normalizeCandidateFilters, getTestToken, setAuthToken };
