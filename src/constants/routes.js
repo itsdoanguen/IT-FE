@@ -10,6 +10,7 @@ export const ROUTES = {
   CANDIDATE_DETAIL: '/quan-ly-ung-vien/:id',
   CHAT: '/chat',
   IN_DEVELOPMENT: '/in-development',
+  COMPANY_PROFILE: '/cong-ty/:id',
 };
 
 export const LEGACY_ROUTES = {
@@ -37,4 +38,8 @@ export function buildInDevelopmentPath(feature) {
   }
   const query = new URLSearchParams({ feature });
   return `${ROUTES.IN_DEVELOPMENT}?${query.toString()}`;
+}
+
+export function buildCompanyProfilePath(id) {
+  return ROUTES.COMPANY_PROFILE.replace(':id', id);
 }
