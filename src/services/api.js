@@ -179,6 +179,28 @@ export async function fetchCandidateDetail(candidateId) {
   });
 }
 
+export async function fetchChatConversations(filters = {}) {
+  const queryString = buildQueryString(filters);
+  return request(`/api/v1/chats/conversations/${queryString}`, {
+    headers: candidateRequestHeaders(),
+  });
+}
+
+export async function fetchChatMessages(peerUserId, filters = {}) {
+  const queryString = buildQueryString({ ...filters, peer_user_id: peerUserId });
+  return request(`/api/v1/chats/messages/${queryString}`, {
+    headers: candidateRequestHeaders(),
+  });
+}
+
+export async function sendChatMessage(payload = {}) {
+  return request('/api/v1/chats/messages/', {
+    method: 'POST',
+    headers: candidateRequestHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
+
 // Lấy chi tiết công việc để đổ vào Form
 export async function fetchJobDetail(id) {
   return request(`/api/jobs/posts/${id}/`); 
