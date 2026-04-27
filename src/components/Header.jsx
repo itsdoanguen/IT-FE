@@ -1,35 +1,36 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { ROUTES, buildInDevelopmentPath } from '../constants/routes';
-import './Header.css';
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ROUTES, buildInDevelopmentPath } from "../constants/routes";
+import "./Header.css";
 
 const ROLE_OPTIONS = [
-  { value: 'guest', label: 'Khách' },
-  { value: 'candidate', label: 'Ứng viên' },
-  { value: 'employer', label: 'Nhà tuyển dụng' },
+  { value: "guest", label: "Khách" },
+  { value: "candidate", label: "Ứng viên" },
+  { value: "employer", label: "Nhà tuyển dụng" },
 ];
 
 const NAV_BY_ROLE = {
   guest: [
-    { label: 'Danh sách công việc', to: ROUTES.RECRUITMENT_LIST },
-    { label: 'Tìm việc', to: ROUTES.JOB_SEARCH },
+    { label: "Danh sách công việc", to: ROUTES.RECRUITMENT_LIST },
+    { label: "Tìm việc", to: ROUTES.JOB_SEARCH },
   ],
   candidate: [
-    { label: 'Việc làm / Tìm việc', to: ROUTES.JOB_SEARCH },
-    { label: 'Matching', to: ROUTES.MATCHING },
-    { label: 'Lịch sử công việc', to: buildInDevelopmentPath('job-history') },
+    { label: "Việc làm / Tìm việc", to: ROUTES.JOB_SEARCH },
+    { label: "Matching", to: ROUTES.MATCHING },
+    { label: "Lịch sử công việc", to: buildInDevelopmentPath("job-history") },
   ],
   employer: [
-    { label: 'Dashboard / Quản lý việc làm', to: ROUTES.RECRUITMENT_LIST },
-    { label: 'Quản lý ứng viên', to: ROUTES.CANDIDATES },
-    { label: 'Tìm ứng viên / Matching', to: ROUTES.MATCHING },
+    { label: "Dashboard / Quản lý việc làm", to: ROUTES.RECRUITMENT_LIST },
+    { label: "Quản lý ứng viên", to: ROUTES.CANDIDATES },
+    { label: "Tìm ứng viên / Matching", to: ROUTES.MATCHING },
+    { label: "Thông tin công ty", to: ROUTES.COMPANY_INFO },
   ],
 };
 
 const TITLE_BY_ROLE = {
-  guest: 'Trang chủ',
-  candidate: 'Trang chủ Nhân viên',
-  employer: 'Trang chủ Công ty',
+  guest: "Trang chủ",
+  candidate: "Trang chủ Nhân viên",
+  employer: "Trang chủ Công ty",
 };
 
 function ChatIcon() {
@@ -62,26 +63,47 @@ export default function Header({ role, onRoleChange }) {
     setShowAccountMenu(false);
   }, [role]);
 
-  const navItems = useMemo(() => NAV_BY_ROLE[role] ?? NAV_BY_ROLE.guest, [role]);
+  const navItems = useMemo(
+    () => NAV_BY_ROLE[role] ?? NAV_BY_ROLE.guest,
+    [role],
+  );
   const roleTitle = TITLE_BY_ROLE[role] ?? TITLE_BY_ROLE.guest;
 
   const accountMenuItems =
-    role === 'candidate'
+    role === "candidate"
       ? [
-          { label: 'Hồ sơ của tôi', to: buildInDevelopmentPath('profile') },
-          { label: 'Điều chỉnh thông tin cá nhân', to: buildInDevelopmentPath('settings') },
-          { label: 'Đăng xuất', to: ROUTES.JOB_SEARCH, onClick: () => onRoleChange('guest') },
+          { label: "Hồ sơ của tôi", to: buildInDevelopmentPath("profile") },
+          {
+            label: "Điều chỉnh thông tin cá nhân",
+            to: buildInDevelopmentPath("settings"),
+          },
+          {
+            label: "Đăng xuất",
+            to: ROUTES.JOB_SEARCH,
+            onClick: () => onRoleChange("guest"),
+          },
         ]
       : [
-          { label: 'Hồ sơ công ty', to: buildInDevelopmentPath('profile') },
-          { label: 'Chỉnh sửa thông tin', to: buildInDevelopmentPath('settings') },
-          { label: 'Đăng xuất', to: ROUTES.JOB_SEARCH, onClick: () => onRoleChange('guest') },
+          { label: "Hồ sơ công ty", to: buildInDevelopmentPath("profile") },
+          {
+            label: "Chỉnh sửa thông tin",
+            to: buildInDevelopmentPath("settings"),
+          },
+          {
+            label: "Đăng xuất",
+            to: ROUTES.JOB_SEARCH,
+            onClick: () => onRoleChange("guest"),
+          },
         ];
 
   return (
     <header className="app-header">
       <div className="header-inner">
-        <button type="button" className="logo-button" onClick={() => navigate(ROUTES.JOB_SEARCH)}>
+        <button
+          type="button"
+          className="logo-button"
+          onClick={() => navigate(ROUTES.JOB_SEARCH)}
+        >
           <span className="logo-mark">IT</span>
           <span className="logo-text">{roleTitle}</span>
         </button>
@@ -109,7 +131,7 @@ export default function Header({ role, onRoleChange }) {
             <button
               key={item.label}
               type="button"
-              className={`nav-item-button ${location.pathname === item.to ? 'is-active' : ''}`}
+              className={`nav-item-button ${location.pathname === item.to ? "is-active" : ""}`}
               onClick={() => navigate(item.to)}
             >
               {item.label}
@@ -118,12 +140,12 @@ export default function Header({ role, onRoleChange }) {
         </nav>
 
         <div className="header-actions">
-          {role === 'guest' ? (
+          {role === "guest" ? (
             <>
               <button
                 type="button"
                 className="ghost-action-button"
-                onClick={() => navigate(buildInDevelopmentPath('login'))}
+                onClick={() => navigate(buildInDevelopmentPath("login"))}
               >
                 Đăng nhập
               </button>
@@ -147,7 +169,7 @@ export default function Header({ role, onRoleChange }) {
                       className="dropdown-item"
                       onClick={() => {
                         setShowRegisterMenu(false);
-                        navigate(buildInDevelopmentPath('register'));
+                        navigate(buildInDevelopmentPath("register"));
                       }}
                     >
                       Đăng ký Ứng viên
@@ -157,7 +179,7 @@ export default function Header({ role, onRoleChange }) {
                       className="dropdown-item"
                       onClick={() => {
                         setShowRegisterMenu(false);
-                        navigate(buildInDevelopmentPath('register'));
+                        navigate(buildInDevelopmentPath("register"));
                       }}
                     >
                       Đăng ký Nhà tuyển dụng
@@ -168,7 +190,7 @@ export default function Header({ role, onRoleChange }) {
             </>
           ) : (
             <>
-              {role === 'employer' ? (
+              {role === "employer" ? (
                 <button
                   type="button"
                   className="cta-button"
@@ -182,7 +204,7 @@ export default function Header({ role, onRoleChange }) {
                 type="button"
                 className="icon-button"
                 aria-label="Tin nhắn"
-                onClick={() => navigate(buildInDevelopmentPath('chat'))}
+                onClick={() => navigate(buildInDevelopmentPath("chat"))}
               >
                 <ChatIcon />
               </button>
@@ -190,7 +212,9 @@ export default function Header({ role, onRoleChange }) {
                 type="button"
                 className="icon-button"
                 aria-label="Thông báo"
-                onClick={() => navigate(buildInDevelopmentPath('notifications'))}
+                onClick={() =>
+                  navigate(buildInDevelopmentPath("notifications"))
+                }
               >
                 <BellIcon />
               </button>
@@ -205,8 +229,10 @@ export default function Header({ role, onRoleChange }) {
                   }}
                   aria-expanded={showAccountMenu}
                 >
-                  <span className="avatar-circle">{role === 'candidate' ? 'UV' : 'CT'}</span>
-                  <span>{role === 'candidate' ? 'Tài khoản' : 'Công ty'}</span>
+                  <span className="avatar-circle">
+                    {role === "candidate" ? "UV" : "CT"}
+                  </span>
+                  <span>{role === "candidate" ? "Tài khoản" : "Công ty"}</span>
                 </button>
                 {showAccountMenu ? (
                   <div className="dropdown-menu account-menu">
