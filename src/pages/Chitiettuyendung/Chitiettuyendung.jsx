@@ -1,5 +1,6 @@
-import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { fetchJobDetail } from "../../services/api";
 import { ROUTES, buildInDevelopmentPath, buildJobEditPath } from "../../constants/routes";
 import styles from "./Chitiettuyendung.module.css";
 
@@ -22,19 +23,62 @@ const defaultRecruitmentData = {
 function Chitiettuyendung() {
   const location = useLocation();
   const navigate = useNavigate();
-  const recruitmentData = {
+  const params = useParams();
+
+  const [recruitmentData, setRecruitmentData] = useState(() => ({
     ...defaultRecruitmentData,
     ...(location.state?.recruitmentData ?? {}),
-  };
+  }));
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const recruitmentId =
     location.state?.recruitmentData?.id ??
     location.state?.recruitmentId ??
+    params?.id ??
     "";
 
-  // ĐÃ SỬA: Chuyển hướng tới trang Edit thay vì trang "Đang phát triển"
+  useEffect(() => {
+    if (!recruitmentId || location.state?.recruitmentData) {
+      return;
+    }
+
+    let isActive = true;
+    setIsLoading(true);
+    setErrorMessage('');
+
+    fetchJobDetail(recruitmentId)
+      .then((data) => {
+        if (!isActive) return;
+
+        setRecruitmentData({
+          id: data?.id ?? data?.tin_id ?? recruitmentId,
+          title: data?.title ?? data?.tieu_de ?? defaultRecruitmentData.title,
+          jobName: data?.jobName ?? data?.tieu_de ?? defaultRecruitmentData.jobName,
+          companyName: data?.companyName ?? data?.company_name ?? defaultRecruitmentData.companyName,
+          salary: data?.salary ?? data?.luong_theo_gio ?? defaultRecruitmentData.salary,
+          location: data?.location ?? data?.dia_diem_lam_viec ?? defaultRecruitmentData.location,
+          employmentType: data?.employmentType ?? data?.hinh_thuc_tuyen_dung ?? defaultRecruitmentData.employmentType,
+          deadline: data?.deadline ?? data?.ket_thuc_lam ?? defaultRecruitmentData.deadline,
+          description: data?.description ?? data?.noi_dung ?? defaultRecruitmentData.description,
+          requirements: data?.requirements ?? data?.yeu_cau ?? defaultRecruitmentData.requirements,
+          benefits: data?.benefits ?? data?.quyen_loi ?? defaultRecruitmentData.benefits,
+        });
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        setErrorMessage(error?.message || 'Không thể tải thông tin công việc.');
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [recruitmentId, location.state]);
+
   const handleEdit = () => {
-    // Ưu tiên dùng ID thực tế, nếu không có thì mặc định lấy ID = 1 để test
     navigate(buildJobEditPath(recruitmentId || 1));
   };
 
@@ -47,9 +91,28 @@ function Chitiettuyendung() {
       navigate(`${ROUTES.CANDIDATES}?job_id=${encodeURIComponent(recruitmentId)}`);
       return;
     }
-
     navigate(ROUTES.CANDIDATES);
   };
+
+  if (isLoading) {
+    return (
+      <main className={styles['chitiettuyendung-page']}>
+        <div className={styles['chitiettuyendung-shell']}>
+          <p>Đang tải dữ liệu...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <main className={styles['chitiettuyendung-page']}>
+        <div className={styles['chitiettuyendung-shell']}>
+          <p className={styles['error']}>{errorMessage}</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className={styles['chitiettuyendung-page']}>

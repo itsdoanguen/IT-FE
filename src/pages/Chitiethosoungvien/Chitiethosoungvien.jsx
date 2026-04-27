@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { fetchCandidateDetail } from '../../services/api';
 import { buildInDevelopmentPath, ROUTES } from '../../constants/routes';
 import styles from './Chitiethosoungvien.module.css';
 
@@ -63,77 +64,119 @@ const MOCK_PROFILE = {
 
 function normalizeCandidateProfile(payload) {
   if (!payload || typeof payload !== 'object') {
-    return MOCK_PROFILE;
+    return null;
   }
 
+  const skills = Array.isArray(payload.skills)
+    ? payload.skills
+    : payload.ky_nang
+      ? String(payload.ky_nang)
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : MOCK_PROFILE.skills;
+
   return {
-    ...MOCK_PROFILE,
     candidate_id: payload.candidate_id || payload.ung_vien_id || MOCK_PROFILE.candidate_id,
     full_name: payload.full_name || payload.ho_ten || payload.name || MOCK_PROFILE.full_name,
     avatar_url: payload.avatar_url || payload.avatar || MOCK_PROFILE.avatar_url,
     phone_number: payload.phone_number || payload.so_dien_thoai || MOCK_PROFILE.phone_number,
     email: payload.email || payload.thu_dien_tu || payload.gmail || MOCK_PROFILE.email,
     location: payload.location || payload.vi_tri_mong_muon || MOCK_PROFILE.location,
-    skills: Array.isArray(payload.skills)
-      ? payload.skills
-      : payload.ky_nang
-        ? String(payload.ky_nang)
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean)
-        : MOCK_PROFILE.skills,
+    headline: payload.headline || payload.vi_tri_mong_muon || MOCK_PROFILE.headline,
     overview: payload.overview || payload.gioi_thieu || MOCK_PROFILE.overview,
+    skills,
+    languages: payload.languages || MOCK_PROFILE.languages,
+    projects: payload.projects || MOCK_PROFILE.projects,
+    education_timeline: payload.education_timeline || payload.education || MOCK_PROFILE.education_timeline,
+    matched_employers: payload.matched_employers || MOCK_PROFILE.matched_employers,
   };
-}
-
-function getProfileFromSession() {
-  try {
-    const rawValue = sessionStorage.getItem('candidate_profile_mock');
-    if (!rawValue) {
-      return null;
-    }
-
-    return JSON.parse(rawValue);
-  } catch (_error) {
-    return null;
-  }
 }
 
 function Chitiethosoungvien() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams();
 
-  const profile = useMemo(() => {
-    const sessionPayload = getProfileFromSession();
-    return normalizeCandidateProfile(sessionPayload || MOCK_PROFILE);
-  }, []);
+  const candidateId = params?.id ?? location.state?.candidateId ?? '';
+
+  const [profile, setProfile] = useState(() => normalizeCandidateProfile(location.state?.candidateData));
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    if (!candidateId || location.state?.candidateData) {
+      if (!profile) setProfile(MOCK_PROFILE);
+      return;
+    }
+
+    let isActive = true;
+    setIsLoading(true);
+    setErrorMessage('');
+
+    fetchCandidateDetail(candidateId)
+      .then((data) => {
+        if (!isActive) return;
+        const normalized = normalizeCandidateProfile(data);
+        setProfile(normalized || MOCK_PROFILE);
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        setErrorMessage(error?.message || 'Không thể tải thông tin ứng viên.');
+        setProfile(MOCK_PROFILE);
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [candidateId, location.state]);
+
+  const displayProfile = profile || MOCK_PROFILE;
+
+  if (isLoading) {
+    return (
+      <section className={styles['candidate-profile-page']}>
+        <div className={styles['candidate-profile-shell']}>
+          <p>Đang tải dữ liệu...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={styles['candidate-profile-page']}>
       <div className={styles['candidate-profile-shell']}>
+        {errorMessage ? (
+          <p className={styles['error']}>{errorMessage}</p>
+        ) : null}
+
         <div className={styles['candidate-layout']}>
           <aside className={styles['left-column']}>
             <article className={styles['profile-card']}>
               <div className={styles['avatar-wrap']}>
-                <img src={profile.avatar_url || DEFAULT_AVATAR} alt={profile.full_name || 'Candidate avatar'} />
+                <img src={displayProfile.avatar_url || DEFAULT_AVATAR} alt={displayProfile.full_name || 'Candidate avatar'} />
                 <span className={styles['online-dot']} />
               </div>
 
-              <h1>{profile.full_name}</h1>
-              <p>{profile.headline}</p>
+              <h1>{displayProfile.full_name}</h1>
+              <p>{displayProfile.headline}</p>
 
               <div className={styles['section-title']}>Thông tin liên hệ</div>
               <ul className={styles['info-list']}>
                 <li>
                   <span>☎</span>
-                  <strong>{profile.phone_number}</strong>
+                  <strong>{displayProfile.phone_number}</strong>
                 </li>
                 <li>
                   <span>✉</span>
-                  <strong>{profile.email}</strong>
+                  <strong>{displayProfile.email}</strong>
                 </li>
                 <li>
                   <span>⌖</span>
-                  <strong>{profile.location}</strong>
+                  <strong>{displayProfile.location}</strong>
                 </li>
               </ul>
             </article>
@@ -141,7 +184,7 @@ function Chitiethosoungvien() {
             <article className={styles['side-card']}>
               <h3>Kỹ năng</h3>
               <div className={styles['chips']}>
-                {profile.skills.map((skill) => (
+                {displayProfile.skills.map((skill) => (
                   <span key={skill}>{skill}</span>
                 ))}
               </div>
@@ -150,7 +193,7 @@ function Chitiethosoungvien() {
             <article className={styles['side-card']}>
               <h3>Ngôn ngữ</h3>
               <ul className={styles['language-list']}>
-                {profile.languages.map((language) => (
+                {displayProfile.languages.map((language) => (
                   <li key={language.name}>
                     <span>{language.name}</span>
                     <strong>{language.level}</strong>
@@ -180,8 +223,7 @@ function Chitiethosoungvien() {
                     Tải hồ sơ
                   </button>
                 </div>
-              </div>
-              <p className={styles['intro-text']}>{profile.overview}</p>
+              <p className={styles['intro-text']}>{displayProfile.overview}</p>
             </article>
 
             <article className={styles['main-card']}>
@@ -197,7 +239,7 @@ function Chitiethosoungvien() {
               </div>
 
               <div className={styles['project-grid']}>
-                {profile.projects.map((project) => (
+                {displayProfile.projects.map((project) => (
                   <article key={project.title} className={styles['project-item']}>
                     <h3>{project.title}</h3>
                     <p>{project.description}</p>
@@ -214,7 +256,7 @@ function Chitiethosoungvien() {
             <article className={styles['main-card']}>
               <h2>Trình độ học vấn</h2>
               <div className={styles['timeline']}>
-                {profile.education_timeline.map((item, index) => (
+                {displayProfile.education_timeline.map((item, index) => (
                   <article key={`${item.title}-${index}`} className={styles['timeline-item']}>
                     <span className={styles['timeline-dot']} />
                     <div>
@@ -244,7 +286,7 @@ function Chitiethosoungvien() {
             <article className={styles['right-card']}>
               <h3>Nhà tuyển dụng phù hợp</h3>
               <div className={styles['employer-list']}>
-                {profile.matched_employers.map((employer, index) => (
+                {displayProfile.matched_employers.map((employer, index) => (
                   <article key={`${employer.company}-${index}`} className={styles['employer-item']}>
                     <span className={styles['employer-logo']}>{employer.company.charAt(0)}</span>
                     <div>
@@ -266,7 +308,6 @@ function Chitiethosoungvien() {
             </article>
           </aside>
         </div>
-      </div>
     </section>
   );
 }

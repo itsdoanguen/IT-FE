@@ -486,6 +486,12 @@ export async function fetchCandidateDetail(candidateId) {
   });
 }
 
+export async function fetchCompanyProfile(companyId) {
+  return request(`/api/profiles/company/${companyId}/`, {
+    headers: candidateRequestHeaders(),
+  });
+}
+
 export async function fetchChatConversations(filters = {}) {
   const queryString = buildQueryString(filters);
   return request(`/api/v1/chats/conversations/${queryString}`, {
