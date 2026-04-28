@@ -2,6 +2,7 @@ const DEFAULT_API_BASE_URL = '';
 const ACCESS_TOKEN_KEY = 'auth_access_token';
 const REFRESH_TOKEN_KEY = 'auth_refresh_token';
 const ROLE_KEY = 'auth_user_role';
+const ROLE_CHANGED_EVENT = 'auth_user_role_changed';
 
 const FE_TO_BE_ROLE_MAP = {
   candidate: 'ung_vien',
@@ -77,6 +78,8 @@ function setStoredUserRole(role) {
     } else {
       window.localStorage.removeItem(ROLE_KEY);
     }
+
+    window.dispatchEvent(new Event(ROLE_CHANGED_EVENT));
   }
 }
 
@@ -102,6 +105,7 @@ function clearAuthSession() {
     window.localStorage.removeItem(ACCESS_TOKEN_KEY);
     window.localStorage.removeItem(REFRESH_TOKEN_KEY);
     window.localStorage.removeItem(ROLE_KEY);
+    window.dispatchEvent(new Event(ROLE_CHANGED_EVENT));
   }
 }
 
@@ -269,7 +273,7 @@ async function getTestToken() {
   try {
     const apiBaseUrl = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
     const testTokenUrl = apiBaseUrl ? `${apiBaseUrl}/api/auth/test-token/` : '/api/auth/test-token/';
-    
+
     const response = await fetch(testTokenUrl, {
       method: 'POST',
       headers: {
@@ -347,14 +351,24 @@ async function request(path, options = {}) {
   return payload;
 }
 
-export async function registerUser({ email, password, role }) {
+export async function registerUser({ email, password, role, profileData = {} }) {
+  const payload = {
+    email,
+    password,
+    vai_tro: mapFeRoleToBeRole(role),
+  };
+
+  // Add optional profile fields if provided
+  if (profileData.ho_ten) payload.ho_ten = profileData.ho_ten;
+  if (profileData.gioi_thieu) payload.gioi_thieu = profileData.gioi_thieu;
+  if (Array.isArray(profileData.hoc_van)) payload.hoc_van = profileData.hoc_van;
+  if (Array.isArray(profileData.chung_chi)) payload.chung_chi = profileData.chung_chi;
+  if (Array.isArray(profileData.ngoai_ngu)) payload.ngoai_ngu = profileData.ngoai_ngu;
+  if (Array.isArray(profileData.du_an)) payload.du_an = profileData.du_an;
+
   return request('/api/auth/register/', {
     method: 'POST',
-    body: JSON.stringify({
-      email,
-      password,
-      vai_tro: mapFeRoleToBeRole(role),
-    }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -430,12 +444,95 @@ export async function createCandidateProfile(profileData) {
   });
 }
 
+export async function fetchMyCandidateProfiles() {
+  const payload = await request('/api/profiles/candidate/', {
+    headers: candidateRequestHeaders(),
+  });
+
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.results)) {
+    return payload.results;
+  }
+
+  return payload ? [payload] : [];
+}
+
+export async function updateCandidateProfile(profileId, updateData = {}) {
+  return request(`/api/profiles/candidate/${profileId}/`, {
+    method: 'PATCH',
+    headers: candidateRequestHeaders(),
+    body: JSON.stringify(updateData),
+  });
+}
+
+export async function uploadCandidateAvatar(file) {
+  if (!file) {
+    throw new Error('Không tìm thấy file ảnh để tải lên.');
+  }
+
+  const apiBaseUrl = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
+  const requestUrl = apiBaseUrl
+    ? `${apiBaseUrl}/api/profiles/candidate/upload-avatar/`
+    : '/api/profiles/candidate/upload-avatar/';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  let response;
+  try {
+    response = await fetch(requestUrl, {
+      method: 'POST',
+      headers: {
+        ...(candidateRequestHeaders() || {}),
+      },
+      body: formData,
+    });
+  } catch (error) {
+    const networkError = new Error(error?.message || 'Lỗi kết nối API. Vui lòng kiểm tra mạng.');
+    networkError.status = 0;
+    throw networkError;
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  const payload = contentType.includes('application/json') ? await response.json() : await response.text();
+
+  if (!response.ok) {
+    const errorMessage =
+      typeof payload === 'object' && payload !== null ? pickErrorMessage(payload) : 'Tải ảnh đại diện thất bại.';
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
+  }
+
+  return payload;
+}
+
 export async function createCompanyProfile(profileData) {
   return request('/api/profiles/company/', {
     method: 'POST',
     headers: candidateRequestHeaders(),
     body: JSON.stringify(profileData),
   });
+}
+
+export async function fetchCompanyProfile() {
+  const payload = await request('/api/profiles/company/', {
+    headers: candidateRequestHeaders(),
+  });
+
+  if (Array.isArray(payload)) {
+    return payload[0] || {};
+  }
+
+  if (Array.isArray(payload?.results)) {
+    return payload.results[0] || {};
+  }
+
+  return payload || {};
 }
 
 export async function fetchJobPosts(filters = {}) {
@@ -516,7 +613,7 @@ export async function sendChatMessage(payload = {}) {
 
 // Lấy chi tiết công việc để đổ vào Form
 export async function fetchJobDetail(id) {
-  return request(`/api/jobs/posts/${id}/`); 
+  return request(`/api/jobs/posts/${id}/`);
 }
 
 // Cập nhật công việc (PATCH)
@@ -554,4 +651,5 @@ export {
   getStoredUserRole,
   clearAuthSession,
   mapBeRoleToFeRole,
+  ROLE_CHANGED_EVENT,
 };

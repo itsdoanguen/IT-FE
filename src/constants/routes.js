@@ -15,6 +15,7 @@ export const ROUTES = {
   CANDIDATE_EDIT: '/chinh-sua-ho-so',
   CHAT: '/chat',
   IN_DEVELOPMENT: '/in-development',
+  COMPANY_INFO: '/thong-tin-cong-ty',
   COMPANY_PROFILE: '/cong-ty/:id',
 };
 

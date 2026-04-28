@@ -1,36 +1,37 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES, buildInDevelopmentPath, buildRegisterPath, REGISTER_ROLES } from '../constants/routes';
-import { logoutUser, setStoredUserRole } from '../services/api';
+import { getStoredUserRole, logoutUser, ROLE_CHANGED_EVENT, setStoredUserRole } from '../services/api';
 import './Header.css';
 
 const ROLE_OPTIONS = [
-  { value: 'guest', label: 'Khách' },
-  { value: 'candidate', label: 'Ứng viên' },
-  { value: 'employer', label: 'Nhà tuyển dụng' },
+  { value: "guest", label: "Khách" },
+  { value: "candidate", label: "Ứng viên" },
+  { value: "employer", label: "Nhà tuyển dụng" },
 ];
 
 const NAV_BY_ROLE = {
   guest: [
-    { label: 'Danh sách công việc', to: ROUTES.RECRUITMENT_LIST },
-    { label: 'Tìm việc', to: ROUTES.JOB_SEARCH },
+    { label: "Danh sách công việc", to: ROUTES.RECRUITMENT_LIST },
+    { label: "Tìm việc", to: ROUTES.JOB_SEARCH },
   ],
   candidate: [
-    { label: 'Việc làm / Tìm việc', to: ROUTES.JOB_SEARCH },
-    { label: 'Matching', to: ROUTES.MATCHING },
-    { label: 'Lịch sử công việc', to: buildInDevelopmentPath('job-history') },
+    { label: "Việc làm / Tìm việc", to: ROUTES.JOB_SEARCH },
+    { label: "Matching", to: ROUTES.MATCHING },
+    { label: "Lịch sử công việc", to: buildInDevelopmentPath("job-history") },
   ],
   employer: [
-    { label: 'Dashboard / Quản lý việc làm', to: ROUTES.RECRUITMENT_LIST },
-    { label: 'Quản lý ứng viên', to: ROUTES.CANDIDATES },
-    { label: 'Tìm ứng viên / Matching', to: ROUTES.MATCHING },
+    { label: "Dashboard / Quản lý việc làm", to: ROUTES.RECRUITMENT_LIST },
+    { label: "Quản lý ứng viên", to: ROUTES.CANDIDATES },
+    { label: "Tìm ứng viên / Matching", to: ROUTES.MATCHING },
+    { label: "Thông tin công ty", to: ROUTES.COMPANY_INFO },
   ],
 };
 
 const TITLE_BY_ROLE = {
-  guest: 'Trang chủ',
-  candidate: 'Trang chủ Nhân viên',
-  employer: 'Trang chủ Công ty',
+  guest: "Trang chủ",
+  candidate: "Trang chủ Nhân viên",
+  employer: "Trang chủ Công ty",
 };
 
 function ChatIcon() {
@@ -52,29 +53,58 @@ function BellIcon() {
   );
 }
 
+function useStoredUserRole(roleFallback) {
+  const [storedRole, setStoredRole] = useState(() => getStoredUserRole());
+
+  useEffect(() => {
+    const updateStoredRole = () => {
+      setStoredRole(getStoredUserRole());
+    };
+
+    window.addEventListener('storage', updateStoredRole);
+    window.addEventListener(ROLE_CHANGED_EVENT, updateStoredRole);
+
+    updateStoredRole();
+
+    return () => {
+      window.removeEventListener('storage', updateStoredRole);
+      window.removeEventListener(ROLE_CHANGED_EVENT, updateStoredRole);
+    };
+  }, []);
+
+  return storedRole || roleFallback || 'guest';
+}
+
 export default function Header({ role, onRoleChange }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showRegisterMenu, setShowRegisterMenu] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const activeRole = useStoredUserRole(role);
 
   useEffect(() => {
     setShowRegisterMenu(false);
     setShowAccountMenu(false);
-  }, [role]);
+  }, [activeRole]);
 
-  const navItems = useMemo(() => NAV_BY_ROLE[role] ?? NAV_BY_ROLE.guest, [role]);
+  const navItems = useMemo(
+    () => NAV_BY_ROLE[role] ?? NAV_BY_ROLE.guest,
+    [role],
+  );
   const roleTitle = TITLE_BY_ROLE[role] ?? TITLE_BY_ROLE.guest;
 
   async function handleLogout() {
-    await logoutUser();
-    setStoredUserRole('guest');
-    onRoleChange('guest');
-    navigate(ROUTES.JOB_SEARCH);
+    try {
+      await logoutUser();
+    } finally {
+      setStoredUserRole('guest');
+      onRoleChange('guest');
+      navigate(ROUTES.JOB_SEARCH, { replace: true });
+    }
   }
 
   const accountMenuItems =
-    role === 'candidate'
+    role === "candidate"
       ? [
           { label: 'Hồ sơ của tôi', to: ROUTES.CANDIDATE_PROFILE },
           { label: 'Điều chỉnh thông tin cá nhân', to: ROUTES.CANDIDATE_EDIT },
@@ -89,38 +119,23 @@ export default function Header({ role, onRoleChange }) {
   return (
     <header className="app-header">
       <div className="header-inner">
-        <button type="button" className="logo-button" onClick={() => navigate(ROUTES.JOB_SEARCH)}>
+        <button
+          type="button"
+          className="logo-button"
+          onClick={() => navigate(ROUTES.JOB_SEARCH)}
+        >
           <span className="logo-mark">IT</span>
           <span className="logo-text">{roleTitle}</span>
         </button>
 
-        <div className="role-switcher">
-          <label htmlFor="role-select" className="role-label">
-            Chế độ xem
-          </label>
-          <select
-            id="role-select"
-            value={role}
-            onChange={(event) => {
-              onRoleChange(event.target.value);
-              setStoredUserRole(event.target.value);
-            }}
-            className="role-select"
-          >
-            {ROLE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+
 
         <nav className="header-nav" aria-label="Điều hướng chính">
           {navItems.map((item) => (
             <button
               key={item.label}
               type="button"
-              className={`nav-item-button ${location.pathname === item.to ? 'is-active' : ''}`}
+              className={`nav-item-button ${location.pathname === item.to ? "is-active" : ""}`}
               onClick={() => navigate(item.to)}
             >
               {item.label}
@@ -129,7 +144,7 @@ export default function Header({ role, onRoleChange }) {
         </nav>
 
         <div className="header-actions">
-          {role === 'guest' ? (
+          {role === "guest" ? (
             <>
               <button
                 type="button"
@@ -179,7 +194,7 @@ export default function Header({ role, onRoleChange }) {
             </>
           ) : (
             <>
-              {role === 'employer' ? (
+              {role === "employer" ? (
                 <button
                   type="button"
                   className="cta-button"
@@ -201,7 +216,9 @@ export default function Header({ role, onRoleChange }) {
                 type="button"
                 className="icon-button"
                 aria-label="Thông báo"
-                onClick={() => navigate(buildInDevelopmentPath('notifications'))}
+                onClick={() =>
+                  navigate(buildInDevelopmentPath("notifications"))
+                }
               >
                 <BellIcon />
               </button>
@@ -216,8 +233,10 @@ export default function Header({ role, onRoleChange }) {
                   }}
                   aria-expanded={showAccountMenu}
                 >
-                  <span className="avatar-circle">{role === 'candidate' ? 'UV' : 'CT'}</span>
-                  <span>{role === 'candidate' ? 'Tài khoản' : 'Công ty'}</span>
+                  <span className="avatar-circle">
+                    {role === "candidate" ? "UV" : "CT"}
+                  </span>
+                  <span>{role === "candidate" ? "Tài khoản" : "Công ty"}</span>
                 </button>
                 {showAccountMenu ? (
                   <div className="dropdown-menu account-menu">
@@ -230,6 +249,7 @@ export default function Header({ role, onRoleChange }) {
                           setShowAccountMenu(false);
                           if (item.onClick) {
                             await item.onClick();
+                            return;
                           }
                           navigate(item.to);
                         }}
