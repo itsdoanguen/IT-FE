@@ -2,6 +2,7 @@ const DEFAULT_API_BASE_URL = '';
 const ACCESS_TOKEN_KEY = 'auth_access_token';
 const REFRESH_TOKEN_KEY = 'auth_refresh_token';
 const ROLE_KEY = 'auth_user_role';
+const ROLE_CHANGED_EVENT = 'auth_user_role_changed';
 
 const FE_TO_BE_ROLE_MAP = {
   candidate: 'ung_vien',
@@ -77,6 +78,8 @@ function setStoredUserRole(role) {
     } else {
       window.localStorage.removeItem(ROLE_KEY);
     }
+
+    window.dispatchEvent(new Event(ROLE_CHANGED_EVENT));
   }
 }
 
@@ -102,6 +105,7 @@ function clearAuthSession() {
     window.localStorage.removeItem(ACCESS_TOKEN_KEY);
     window.localStorage.removeItem(REFRESH_TOKEN_KEY);
     window.localStorage.removeItem(ROLE_KEY);
+    window.dispatchEvent(new Event(ROLE_CHANGED_EVENT));
   }
 }
 
@@ -810,4 +814,5 @@ export {
   getStoredUserRole,
   clearAuthSession,
   mapBeRoleToFeRole,
+  ROLE_CHANGED_EVENT,
 };
