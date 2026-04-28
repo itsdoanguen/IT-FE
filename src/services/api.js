@@ -528,6 +528,22 @@ export async function updateJobPost(id, updateData) {
   });
 }
 
+// Lấy thông tin đánh giá ứng viên
+export async function fetchCandidateEvaluation(candidateId) {
+  return request(`/api/v1/candidates/${candidateId}/evaluation/`, {
+    headers: candidateRequestHeaders(),
+  });
+}
+
+// Cập nhật đánh giá ứng viên
+export async function updateCandidateEvaluation(candidateId, payload) {
+  return request(`/api/v1/candidates/${candidateId}/evaluation/`, {
+    method: 'POST',
+    headers: candidateRequestHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
+
 export {
   buildQueryString,
   request,

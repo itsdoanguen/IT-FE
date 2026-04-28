@@ -1,62 +1,57 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from './Danhgiaungvien.module.css';
-import { fetchCandidateDetail } from '../../services/api';
+import { fetchCandidateEvaluation, updateCandidateEvaluation } from '../../services/api';
 
 const STATUS_OPTIONS = [
-  { value: 'reviewing', label: 'Đang xem xét' },
-  { value: 'interview', label: 'Phỏng vấn' },
-  { value: 'rejected', label: 'Đã từ chối' },
-  { value: 'hired', label: 'Đã trúng tuyển' },
+  { value: 'cho_duyet', label: 'Đang xem xét' },
+  { value: 'chap_nhan', label: 'Phỏng vấn' },
+  { value: 'tu_choi', label: 'Đã từ chối' },
+  { value: 'hoan_thanh', label: 'Đã trúng tuyển' },
 ];
-
-const MOCK_CANDIDATE = {
-  full_name: 'Nguyễn Văn An',
-  email: 'nguyen.van.an@example.com',
-  phone_number: '0901234567',
-  position: 'Senior Frontend Developer',
-  applied_date: '2024-04-15',
-  cv_url: '#',
-  status: 'reviewing',
-  rating: 4,
-  comment: 'Ứng viên có kỹ năng React tốt, giao tiếp tự tin.'
-};
 
 const Danhgiaungvien = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [candidate, setCandidate] = useState(MOCK_CANDIDATE);
+  const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [rating, setRating] = useState(MOCK_CANDIDATE.rating);
-  const [comment, setComment] = useState(MOCK_CANDIDATE.comment);
-  const [status, setStatus] = useState(MOCK_CANDIDATE.status);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [status, setStatus] = useState('');
 
   useEffect(() => {
-    // Giả lập fetch dữ liệu từ API
     const loadData = async () => {
       try {
-        // Trong thực tế sẽ gọi fetchCandidateDetail(id)
-        // const data = await fetchCandidateDetail(id);
-        // setCandidate(data);
-        // setRating(data.rating || 0);
-        // setComment(data.comment || '');
-        // setStatus(data.status || 'reviewing');
+        const data = await fetchCandidateEvaluation(id);
+        setCandidate(data);
+        setRating(data.rating || 0);
+        setComment(data.comment || '');
+        setStatus(data.status || 'cho_duyet');
         setLoading(false);
       } catch (error) {
-        console.error('Lỗi khi tải thông tin ứng viên:', error);
+        console.error('Lỗi khi tải thông tin đánh giá ứng viên:', error);
         setLoading(false);
       }
     };
     loadData();
   }, [id]);
 
-  const handleUpdate = () => {
-    alert('Đã cập nhật thông tin đánh giá ứng viên!');
-    console.log({ status, rating, comment });
-    // Trong thực tế sẽ gọi API cập nhật ở đây
+  const handleUpdate = async () => {
+    try {
+      await updateCandidateEvaluation(id, {
+        status,
+        rating,
+        comment,
+      });
+      alert('Đã cập nhật thông tin đánh giá ứng viên thành công!');
+    } catch (error) {
+      console.error('Lỗi khi cập nhật đánh giá:', error);
+      alert('Có lỗi xảy ra khi cập nhật thông tin.');
+    }
   };
 
-  if (loading) return <div className={styles.container}>Đang tải...</div>;
+  if (loading) return <div className={styles.container}>Đang tải dữ liệu...</div>;
+  if (!candidate) return <div className={styles.container}>Không tìm thấy thông tin ứng viên hoặc đơn ứng tuyển.</div>;
 
   return (
     <div className={styles.container}>
