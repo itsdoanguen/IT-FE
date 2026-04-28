@@ -101,7 +101,7 @@ function App() {
     initializeAuthSession();
   }, []);
 
-  const fallbackRoute = buildInDevelopmentPath('404');
+  const fallbackRoute = buildInDevelopmentPath("404");
 
   return (
     <Router>
@@ -115,9 +115,13 @@ function App() {
             <Route path={ROUTES.AUTH_REGISTER} element={<AuthRegister onAuthSuccess={setRole} />} />
 
             <Route path={ROUTES.JOB_POST} element={<Dangtintuyendung />} />
-            <Route path={ROUTES.RECRUITMENT_LIST} element={<Danhsachtuyendung />} />
+            <Route
+              path={ROUTES.RECRUITMENT_LIST}
+              element={<Danhsachtuyendung />}
+            />
             <Route path={ROUTES.MATCHING} element={<Manhinhmatching />} />
             <Route path={ROUTES.JOB_SEARCH} element={<Timkiemcongviec />} />
+            <Route path={ROUTES.COMPANY_INFO} element={<Thongtincongty />} />
             <Route path={ROUTES.CANDIDATES} element={<Quanlyungvien />} />
             <Route path={ROUTES.CANDIDATE_DETAIL} element={<Chitiethosoungvien />} />
             <Route path={ROUTES.CANDIDATE_PROFILE} element={<Chitiethosoungvien />} />
@@ -128,17 +132,38 @@ function App() {
             <Route path={ROUTES.JOB_EDIT} element={<EditJob />} />
             <Route path={ROUTES.COMPANY_PROFILE} element={<CompanyProfile />} />
 
-            <Route path={LEGACY_ROUTES.JOB_POST} element={<Navigate to={ROUTES.JOB_POST} replace />} />
+            <Route
+              path={LEGACY_ROUTES.JOB_POST}
+              element={<Navigate to={ROUTES.JOB_POST} replace />}
+            />
             <Route
               path={LEGACY_ROUTES.RECRUITMENT_LIST}
               element={<Navigate to={ROUTES.RECRUITMENT_LIST} replace />}
             />
-            <Route path={LEGACY_ROUTES.MATCHING} element={<Navigate to={ROUTES.MATCHING} replace />} />
-            <Route path={LEGACY_ROUTES.JOB_SEARCH} element={<Navigate to={ROUTES.JOB_SEARCH} replace />} />
-            <Route path={LEGACY_ROUTES.CANDIDATES} element={<Navigate to={ROUTES.CANDIDATES} replace />} />
-            <Route path={LEGACY_ROUTES.CANDIDATE_DETAIL} element={<LegacyCandidateRedirect />} />
-            <Route path={LEGACY_ROUTES.JOB_DETAIL_TEMP} element={<Navigate to={ROUTES.JOB_DETAIL} replace />} />
-            <Route path={LEGACY_ROUTES.JOB_DETAIL} element={<Navigate to={ROUTES.JOB_DETAIL} replace />} />
+            <Route
+              path={LEGACY_ROUTES.MATCHING}
+              element={<Navigate to={ROUTES.MATCHING} replace />}
+            />
+            <Route
+              path={LEGACY_ROUTES.JOB_SEARCH}
+              element={<Navigate to={ROUTES.JOB_SEARCH} replace />}
+            />
+            <Route
+              path={LEGACY_ROUTES.CANDIDATES}
+              element={<Navigate to={ROUTES.CANDIDATES} replace />}
+            />
+            <Route
+              path={LEGACY_ROUTES.CANDIDATE_DETAIL}
+              element={<LegacyCandidateRedirect />}
+            />
+            <Route
+              path={LEGACY_ROUTES.JOB_DETAIL_TEMP}
+              element={<Navigate to={ROUTES.JOB_DETAIL} replace />}
+            />
+            <Route
+              path={LEGACY_ROUTES.JOB_DETAIL}
+              element={<Navigate to={ROUTES.JOB_DETAIL} replace />}
+            />
 
             <Route path="*" element={<Navigate to={fallbackRoute} replace />} />
           </Routes>
