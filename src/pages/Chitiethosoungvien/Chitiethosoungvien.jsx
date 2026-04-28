@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buildInDevelopmentPath, ROUTES } from '../../constants/routes';
 import { fetchMyCandidateProfiles } from '../../services/api';
+import { downloadCVFile, generatePDFClientSide } from '../../services/cvService';
 import styles from './Chitiethosoungvien.module.css';
+import './Chitiethosoungvien.printable.css';
 
 const DEFAULT_AVATAR =
   'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=360&q=80';
@@ -138,6 +140,10 @@ function Chitiethosoungvien() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
+  const [downloadError, setDownloadError] = useState(null);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState('professional');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -164,6 +170,47 @@ function Chitiethosoungvien() {
 
     fetchProfile();
   }, []);
+
+  // Handler for downloading CV from backend (Phase 2)
+  const handleDownloadCVFromBackend = async () => {
+    setDownloadLoading(true);
+    setDownloadError(null);
+    setDownloadSuccess(false);
+
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      await downloadCVFile(profile.full_name || 'CV', apiBaseUrl, selectedTemplate);
+      setDownloadSuccess(true);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setDownloadSuccess(false), 3000);
+    } catch (err) {
+      console.error('Error downloading CV from backend:', err);
+      setDownloadError(err?.message || 'Không thể tải CV từ server. Vui lòng thử lại.');
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
+
+  // Handler for downloading CV client-side using html2canvas (Phase 1 MVP alternative)
+  const handleDownloadCVClientSide = async () => {
+    setDownloadLoading(true);
+    setDownloadError(null);
+    setDownloadSuccess(false);
+
+    try {
+      await generatePDFClientSide(profile, profile.full_name || 'CV');
+      setDownloadSuccess(true);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setDownloadSuccess(false), 3000);
+    } catch (err) {
+      console.error('Error generating PDF client-side:', err);
+      setDownloadError(err?.message || 'Không thể tạo PDF. Vui lòng thử lại.');
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
 
   // Render loading state
   if (loading) {
@@ -264,12 +311,70 @@ function Chitiethosoungvien() {
                   <button
                     type="button"
                     className={styles['primary-button']}
-                    onClick={() => navigate(buildInDevelopmentPath('candidate-profile-viewer'))}
+                    onClick={handleDownloadCVFromBackend}
+                    disabled={downloadLoading}
+                    title="Tải hồ sơ dưới dạng PDF"
                   >
-                    Tải hồ sơ
+                    {downloadLoading ? 'Đang tải...' : 'Tải hồ sơ'}
                   </button>
                 </div>
               </div>
+
+              {/* Template Selector (Phase 2) */}
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '500' }}>
+                  Chọn kiểu CV:
+                </label>
+                <select
+                  value={selectedTemplate}
+                  onChange={(e) => setSelectedTemplate(e.target.value)}
+                  disabled={downloadLoading}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    border: '1px solid #ddd',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                    cursor: downloadLoading ? 'not-allowed' : 'pointer',
+                    opacity: downloadLoading ? 0.6 : 1,
+                  }}
+                >
+                  <option value="professional">Chuyên nghiệp (Mặc định)</option>
+                  <option value="modern">Hiện đại</option>
+                  <option value="minimal">Tối giản</option>
+                </select>
+              </div>
+
+              {/* Download Status Messages */}
+              {downloadSuccess && (
+                <div style={{
+                  padding: '10px 15px',
+                  marginBottom: '15px',
+                  backgroundColor: '#d4edda',
+                  color: '#155724',
+                  borderRadius: '4px',
+                  border: '1px solid #c3e6cb',
+                  fontSize: '14px',
+                }}>
+                  ✓ Tải CV thành công! File đã được lưu vào máy của bạn.
+                </div>
+              )}
+
+              {downloadError && (
+                <div style={{
+                  padding: '10px 15px',
+                  marginBottom: '15px',
+                  backgroundColor: '#f8d7da',
+                  color: '#721c24',
+                  borderRadius: '4px',
+                  border: '1px solid #f5c6cb',
+                  fontSize: '14px',
+                }}>
+                  ✗ {downloadError}
+                </div>
+              )}
+
               <p className={styles['intro-text']}>{displayProfile.overview || 'Ứng viên chưa cập nhật phần giới thiệu.'}</p>
             </article>
 
