@@ -14,6 +14,7 @@ import CompanyProfile from './pages/Chitietcongty/CompanyProfile';
 import Chat from './pages/Chat/Chat';
 import AuthLogin from './pages/AuthLogin/AuthLogin';
 import AuthRegister from './pages/AuthRegister/AuthRegister';
+import Thongtincongty from './pages/thongtincongty/Thongtincongty';
 import Header from './components/Header';
 import {
   fetchCurrentUser,
