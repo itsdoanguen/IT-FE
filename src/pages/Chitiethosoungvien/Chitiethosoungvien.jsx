@@ -114,6 +114,15 @@ function normalizeCandidateProfile(payload) {
     return EMPTY_PROFILE;
   }
 
+  const skills = Array.isArray(payload.skills)
+    ? payload.skills
+    : payload.ky_nang
+      ? String(payload.ky_nang)
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : MOCK_PROFILE.skills;
+
   return {
     ...EMPTY_PROFILE,
     candidate_id: payload.candidate_id || payload.ung_vien_id || payload.ung_vien || EMPTY_PROFILE.candidate_id,
@@ -242,6 +251,10 @@ function Chitiethosoungvien() {
   return (
     <section className={styles['candidate-profile-page']}>
       <div className={styles['candidate-profile-shell']}>
+        {errorMessage ? (
+          <p className={styles['error']}>{errorMessage}</p>
+        ) : null}
+
         <div className={styles['candidate-layout']}>
           <aside className={styles['left-column']}>
             <article className={styles['profile-card']}>

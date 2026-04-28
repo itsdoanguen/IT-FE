@@ -7,6 +7,7 @@ import Danhsachtuyendung from './pages/Danhsachtuyendung/Danhsachtuyendung';
 import Chitiettuyendung from './pages/Chitiettuyendung/Chitiettuyendung';
 import Quanlyungvien from './pages/Quanlyungvien/Quanlyungvien';
 import Chitiethosoungvien from './pages/Chitiethosoungvien/Chitiethosoungvien';
+import Danhgiaungvien from './pages/Danhgiaungvien/Danhgiaungvien';
 import Chinhsuahosoungvien from './pages/Chinhsuahosoungvien/Chinhsuahosoungvien';
 import InDevelopment from './pages/InDevelopment/InDevelopment';
 import EditJob from './pages/Chinhsuatintuyendung/EditJob';
@@ -49,6 +50,7 @@ function AppRoutes({ role, onRoleChange, fallbackRoute }) {
           <Route path={ROUTES.JOB_SEARCH} element={<Timkiemcongviec />} />
           <Route path={ROUTES.CANDIDATES} element={<Quanlyungvien />} />
           <Route path={ROUTES.CANDIDATE_DETAIL} element={<Chitiethosoungvien />} />
+          <Route path={ROUTES.CANDIDATE_EVALUATION} element={<Danhgiaungvien />} />
           <Route path={ROUTES.JOB_DETAIL} element={<Chitiettuyendung />} />
           <Route path={ROUTES.CHAT} element={<Chat />} />
           <Route path={ROUTES.IN_DEVELOPMENT} element={<InDevelopment />} />

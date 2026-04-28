@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { recruitmentPosts } from '../../data';
+import { fetchJobPosts } from '../../services/api';
 import { ROUTES } from '../../constants/routes';
 import styles from './Danhsachtuyendung.module.css';
 
@@ -30,10 +30,42 @@ function Danhsachtuyendung() {
   const navigate = useNavigate();
   const routerLocation = useLocation();
   const incomingJobs = Array.isArray(routerLocation.state?.jobs) ? routerLocation.state.jobs : null;
-  const sourcePosts = incomingJobs !== null ? incomingJobs : recruitmentPosts;
+
+  const [apiPosts, setApiPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const [keyword, setKeyword] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('Tất cả');
+
+  useEffect(() => {
+    if (incomingJobs !== null) {
+      return;
+    }
+
+    let isActive = true;
+    setIsLoading(true);
+    setErrorMessage('');
+
+    fetchJobPosts()
+      .then((jobs) => {
+        if (!isActive) return;
+        setApiPosts(jobs);
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        setErrorMessage(error?.message || 'Không thể tải danh sách công việc.');
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [incomingJobs]);
+
+  const sourcePosts = incomingJobs !== null ? incomingJobs : apiPosts;
 
   const locations = useMemo(() => {
     const uniqueLocations = Array.from(
@@ -88,64 +120,73 @@ function Danhsachtuyendung() {
           </div>
         </header>
 
-        <div className={styles['recruitment-table-head']}>
-          <span>#</span>
-          <span>Tên công việc</span>
-          <span>Số vị trí</span>
-          <span>Địa điểm</span>
-          <span>Thao tác</span>
-        </div>
+        {isLoading ? (
+          <p className={styles['recruitment-empty-state']}>Đang tải dữ liệu...</p>
+        ) : errorMessage ? (
+          <p className={styles['recruitment-empty-state']}>{errorMessage}</p>
+        ) : (
+          <>
+            <div className={styles['recruitment-table-head']}>
+              <span>#</span>
+              <span>Tên công việc</span>
+              <span>Số vị trí</span>
+              <span>Địa điểm</span>
+              <span>Thao tác</span>
+            </div>
 
-        <div className={styles['recruitment-list']}>
-          {filteredPosts.length === 0 ? (
-            <p className={styles['recruitment-empty-state']}>Không có tin tuyển dụng phù hợp.</p>
-          ) : (
-            filteredPosts.map((post, index) => (
-              <article
-                key={post.id}
-                className={`${styles['recruitment-row']} ${index % 2 === 0 ? styles['is-light'] : styles['is-low']}`}
-              >
-                <span className={styles['recruitment-index']}>{index + 1}</span>
-                <div className={styles['recruitment-role']}>
-                  <h2>{post.title}</h2>
-                  <p>{post.summary}</p>
-                </div>
-                <span className={styles['recruitment-openings']}>{post.openings}</span>
-                <div className={styles['recruitment-location']}>
-                  <span>{post.location}</span>
-                </div>
-                <button
-                  className={styles['recruitment-apply-btn']}
-                  type="button"
-                  onClick={() => {
-                    navigate(ROUTES.JOB_DETAIL, {
-                      state: {
-                        recruitmentData: {
-                          id: post.id,
-                          title: post.title,
-                          jobName: post.title,
-                          companyName: post.companyName || 'Doanh nghiệp tuyển dụng',
-                          salary: post.salary || 'Thỏa thuận',
-                          location: post.location || 'Chưa cập nhật',
-                          employmentType: post.employmentType || 'Toàn thời gian',
-                          deadline: post.deadline || 'Chưa cập nhật',
-                          description: post.summary || post.description || '',
-                          requirements: post.requirements || 'Trao đổi trong quá trình phỏng vấn.',
-                          benefits: post.benefits || 'Theo chính sách công ty.',
-                        },
-                      },
-                    });
-                  }}
-                >
-                  Xem chi tiết
-                </button>
-              </article>
-            ))
-          )}
-        </div>
+            <div className={styles['recruitment-list']}>
+              {filteredPosts.length === 0 ? (
+                <p className={styles['recruitment-empty-state']}>Không có tin tuyển dụng phù hợp.</p>
+              ) : (
+                filteredPosts.map((post, index) => (
+                  <article
+                    key={post.id}
+                    className={`${styles['recruitment-row']} ${index % 2 === 0 ? styles['is-light'] : styles['is-low']}`}
+                  >
+                    <span className={styles['recruitment-index']}>{index + 1}</span>
+                    <div className={styles['recruitment-role']}>
+                      <h2>{post.title}</h2>
+                      <p>{post.summary}</p>
+                    </div>
+                    <span className={styles['recruitment-openings']}>{post.openings}</span>
+                    <div className={styles['recruitment-location']}>
+                      <span>{post.location}</span>
+                    </div>
+                    <button
+                      className={styles['recruitment-apply-btn']}
+                      type="button"
+                      onClick={() => {
+                        navigate(ROUTES.JOB_DETAIL, {
+                          state: {
+                            recruitmentData: {
+                              id: post.id,
+                              title: post.title,
+                              jobName: post.title,
+                              companyName: post.companyName || 'Doanh nghiệp tuyển dụng',
+                              salary: post.salary || 'Thỏa thuận',
+                              location: post.location || 'Chưa cập nhật',
+                              employmentType: post.employmentType || 'Toàn thời gian',
+                              deadline: post.deadline || 'Chưa cập nhật',
+                              description: post.summary || post.description || '',
+                              requirements: post.requirements || 'Trao đổi trong quá trình phỏng vấn.',
+                              benefits: post.benefits || 'Theo chính sách công ty.',
+                            },
+                          },
+                        });
+                      }}
+                    >
+                      Xem chi tiết
+                    </button>
+                  </article>
+                ))
+              )}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
 }
 
 export default Danhsachtuyendung;
+

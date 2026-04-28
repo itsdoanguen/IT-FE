@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchCompanyProfile, fetchCurrentUser } from '../../services/api';
 import './CompanyProfile.css';
 
 const CompanyProfile = () => {
@@ -6,19 +7,35 @@ const CompanyProfile = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   // State quản lý chế độ chỉnh sửa thông tin cơ bản
   const [isEditing, setIsEditing] = useState(false);
+  // State quản lý tải dữ liệu
+  const [isLoading, setIsLoading] = useState(true);
+  // State quản lý lỗi
+  const [errorMessage, setErrorMessage] = useState('');
+  // State lưu dữ liệu công ty
+  const [companyData, setCompanyData] = useState(null);
 
-  // Dữ liệu mẫu (mock data)
-  const [companyData, setCompanyData] = useState({
-    name: 'Công ty Cổ phần Công nghệ Baito',
-    industry: 'Phần mềm & Công nghệ Thông tin (IT)',
-    location: 'Quận Hải Châu, TP. Đà Nẵng',
-    avatar: 'https://via.placeholder.com/120?text=Baito',
-    foundedYear: '2020',
-    employees: '50 - 100 nhân viên',
-    headquarters: 'Tòa nhà Software Park, Đà Nẵng',
-    taxCode: '0402123456',
-    website: 'https://baito.vn',
-  });
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      try {
+        setIsLoading(true);
+        setErrorMessage('');
+        const user = await fetchCurrentUser();
+        if (user && user.id) {
+          const companyProfile = await fetchCompanyProfile(user.id);
+          setCompanyData(companyProfile);
+        } else {
+          setErrorMessage('Không thể xác thực người dùng');
+        }
+      } catch (error) {
+        setErrorMessage(error?.message || 'Không thể tải thông tin công ty');
+        console.error('Error fetching company profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCompanyData();
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);

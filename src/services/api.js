@@ -583,6 +583,12 @@ export async function fetchCandidateDetail(candidateId) {
   });
 }
 
+export async function fetchCompanyProfile(companyId) {
+  return request(`/api/profiles/company/${companyId}/`, {
+    headers: candidateRequestHeaders(),
+  });
+}
+
 export async function fetchChatConversations(filters = {}) {
   const queryString = buildQueryString(filters);
   return request(`/api/v1/chats/conversations/${queryString}`, {
@@ -616,6 +622,22 @@ export async function updateJobPost(id, updateData) {
     method: 'PATCH',
     headers: candidateRequestHeaders(),
     body: JSON.stringify(updateData),
+  });
+}
+
+// Lấy thông tin đánh giá ứng viên
+export async function fetchCandidateEvaluation(candidateId) {
+  return request(`/api/v1/candidates/${candidateId}/evaluation/`, {
+    headers: candidateRequestHeaders(),
+  });
+}
+
+// Cập nhật đánh giá ứng viên
+export async function updateCandidateEvaluation(candidateId, payload) {
+  return request(`/api/v1/candidates/${candidateId}/evaluation/`, {
+    method: 'POST',
+    headers: candidateRequestHeaders(),
+    body: JSON.stringify(payload),
   });
 }
 
