@@ -223,6 +223,7 @@ function Chitiethosoungvien() {
                     Tải hồ sơ
                   </button>
                 </div>
+              </div>
               <p className={styles['intro-text']}>{displayProfile.overview}</p>
             </article>
 
@@ -308,6 +309,7 @@ function Chitiethosoungvien() {
             </article>
           </aside>
         </div>
+      </div>
     </section>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchCandidates, fetchMatchedCandidates } from '../../services/api';
-import { buildCandidateDetailPath, buildInDevelopmentPath } from '../../constants/routes';
+import { buildCandidateDetailPath, buildCandidateEvaluationPath, buildInDevelopmentPath } from '../../constants/routes';
 import styles from './Quanlyungvien.module.css';
 
 const TAB_OPTIONS = [
@@ -315,9 +315,9 @@ function Quanlyungvien() {
                     <div className={styles['candidate-actions']}>
                       <button
                         type="button"
-                        onClick={() => navigate(buildInDevelopmentPath('candidate-contact'))}
+                        onClick={() => navigate(buildCandidateEvaluationPath(candidate.candidate_id))}
                       >
-                        Liên hệ
+                        Đánh giá
                       </button>
                       <button
                         type="button"

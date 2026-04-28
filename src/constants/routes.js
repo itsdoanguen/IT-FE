@@ -10,6 +10,7 @@ export const ROUTES = {
   MATCHING: '/man-hinh-matching',
   CANDIDATES: '/quan-ly-ung-vien',
   CANDIDATE_DETAIL: '/quan-ly-ung-vien/:id',
+  CANDIDATE_EVALUATION: '/quan-ly-ung-vien/:id/danh-gia',
   CANDIDATE_PROFILE: '/ho-so-cua-toi',
   CANDIDATE_EDIT: '/chinh-sua-ho-so',
   CHAT: '/chat',
@@ -35,6 +36,10 @@ export const REGISTER_ROLES = {
 
 export function buildCandidateDetailPath(id) {
   return `${ROUTES.CANDIDATES}/${id}`;
+}
+
+export function buildCandidateEvaluationPath(id) {
+  return ROUTES.CANDIDATE_EVALUATION.replace(':id', id);
 }
 
 export function buildJobEditPath(id) {
