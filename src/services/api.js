@@ -265,6 +265,207 @@ function buildJobPostPayload(jobData = {}, companyId = '') {
   return payload;
 }
 
+function setRefreshToken(token) {
+  if (token && typeof window !== 'undefined') {
+    window.localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  }
+}
+
+function setStoredUserRole(role) {
+  if (typeof window !== 'undefined') {
+    if (role) {
+      window.localStorage.setItem(ROLE_KEY, role);
+    } else {
+      window.localStorage.removeItem(ROLE_KEY);
+    }
+  }
+}
+
+function getStoredUserRole() {
+  if (typeof window === 'undefined') {
+    return 'guest';
+  }
+
+  const role = window.localStorage.getItem(ROLE_KEY);
+  return role || 'guest';
+}
+
+function getStoredRefreshToken() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY) || '';
+}
+
+function clearAuthSession() {
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+    window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+    window.localStorage.removeItem(ROLE_KEY);
+  }
+}
+
+function mapFeRoleToBeRole(role) {
+  return FE_TO_BE_ROLE_MAP[role] || FE_TO_BE_ROLE_MAP.candidate;
+}
+
+function mapBeRoleToFeRole(role) {
+  return BE_TO_FE_ROLE_MAP[role] || 'guest';
+}
+
+function pickErrorMessage(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return 'Yêu cầu không thành công.';
+  }
+
+  if (typeof payload.detail === 'string' && payload.detail.trim()) {
+    return payload.detail.trim();
+  }
+
+  if (typeof payload.message === 'string' && payload.message.trim()) {
+    return payload.message.trim();
+  }
+
+  const firstFieldWithErrors = Object.values(payload).find((value) => Array.isArray(value) && value.length > 0);
+  if (firstFieldWithErrors) {
+    return String(firstFieldWithErrors[0]);
+  }
+
+  return 'Yêu cầu không thành công.';
+}
+
+function normalizeSalaryValue(salary) {
+  if (salary === undefined || salary === null) {
+    return '0';
+  }
+
+  const normalizedSalary = String(salary).trim();
+  if (!normalizedSalary) {
+    return '0';
+  }
+
+  const matchedNumber = normalizedSalary.replace(/,/g, '.').match(/-?\d+(?:\.\d+)?/);
+  return matchedNumber ? matchedNumber[0] : '0';
+}
+
+function normalizeDateTimeValue(value, { endOfDay = false } = {}) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString();
+  }
+
+  const normalizedValue = String(value ?? '').trim();
+  if (!normalizedValue) {
+    return '';
+  }
+
+  const isoDateMatch = normalizedValue.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ].*)?$/);
+  if (isoDateMatch) {
+    const [, year, month, day] = isoDateMatch;
+    const utcDate = new Date(
+      Date.UTC(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        endOfDay ? 23 : 0,
+        endOfDay ? 59 : 0,
+        endOfDay ? 59 : 0,
+        0,
+      ),
+    );
+    return utcDate.toISOString();
+  }
+
+  const localDateMatch = normalizedValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (localDateMatch) {
+    const [, day, month, year] = localDateMatch;
+    const utcDate = new Date(
+      Date.UTC(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        endOfDay ? 23 : 0,
+        endOfDay ? 59 : 0,
+        endOfDay ? 59 : 0,
+        0,
+      ),
+    );
+    return utcDate.toISOString();
+  }
+
+  const parsedDate = new Date(normalizedValue);
+  if (!Number.isNaN(parsedDate.getTime())) {
+    return parsedDate.toISOString();
+  }
+
+  return '';
+}
+
+function normalizeJobStatus(status) {
+  const normalizedStatus = String(status ?? '').trim().toLowerCase();
+
+  if (!normalizedStatus) {
+    return 'dang_mo';
+  }
+
+  const statusMap = {
+    'đăng': 'dang_mo',
+    dang: 'dang_mo',
+    dang_mo: 'dang_mo',
+    'mở': 'dang_mo',
+    mo: 'dang_mo',
+    nháp: 'da_dong',
+    nhap: 'da_dong',
+    'đóng': 'da_dong',
+    dong: 'da_dong',
+    da_dong: 'da_dong',
+  };
+
+  return statusMap[normalizedStatus] || 'dang_mo';
+}
+
+function buildJobPostPayload(jobData = {}, companyId = '') {
+  const title = String(jobData.tieu_de ?? jobData.title ?? '').trim();
+  const description = String(jobData.noi_dung ?? jobData.description ?? '').trim();
+  const location = String(jobData.dia_diem_lam_viec ?? jobData.location ?? '').trim();
+  const recruitmentType = String(jobData.hinh_thuc_tuyen_dung ?? jobData.employmentType ?? '').trim();
+  const requirements = String(jobData.yeu_cau ?? jobData.requirements ?? '').trim();
+  const benefits = String(jobData.quyen_loi ?? jobData.benefits ?? '').trim();
+  const status = normalizeJobStatus(jobData.trang_thai ?? jobData.status);
+
+  const startDate =
+    normalizeDateTimeValue(jobData.bat_dau_lam, { endOfDay: false }) ||
+    new Date().toISOString();
+  const deadlineDate =
+    normalizeDateTimeValue(jobData.ket_thuc_lam ?? jobData.deadline, { endOfDay: true }) ||
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const payload = {
+    cong_ty: companyId,
+    tieu_de: title,
+    noi_dung: description,
+    bat_dau_lam: startDate,
+    ket_thuc_lam: deadlineDate,
+    luong_theo_gio: normalizeSalaryValue(jobData.luong_theo_gio ?? jobData.salary),
+    dia_diem_lam_viec: location,
+    trang_thai: status,
+  };
+
+  if (recruitmentType) {
+    payload.hinh_thuc_tuyen_dung = recruitmentType;
+  }
+
+  if (requirements) {
+    payload.yeu_cau = requirements;
+  }
+
+  if (benefits) {
+    payload.quyen_loi = benefits;
+  }
+
+  return payload;
+}
+
 async function getTestToken() {
   try {
     const apiBaseUrl = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
@@ -347,14 +548,24 @@ async function request(path, options = {}) {
   return payload;
 }
 
-export async function registerUser({ email, password, role }) {
+export async function registerUser({ email, password, role, profileData = {} }) {
+  const payload = {
+    email,
+    password,
+    vai_tro: mapFeRoleToBeRole(role),
+  };
+
+  // Add optional profile fields if provided
+  if (profileData.ho_ten) payload.ho_ten = profileData.ho_ten;
+  if (profileData.gioi_thieu) payload.gioi_thieu = profileData.gioi_thieu;
+  if (Array.isArray(profileData.hoc_van)) payload.hoc_van = profileData.hoc_van;
+  if (Array.isArray(profileData.chung_chi)) payload.chung_chi = profileData.chung_chi;
+  if (Array.isArray(profileData.ngoai_ngu)) payload.ngoai_ngu = profileData.ngoai_ngu;
+  if (Array.isArray(profileData.du_an)) payload.du_an = profileData.du_an;
+
   return request('/api/auth/register/', {
     method: 'POST',
-    body: JSON.stringify({
-      email,
-      password,
-      vai_tro: mapFeRoleToBeRole(role),
-    }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -430,17 +641,78 @@ export async function createCandidateProfile(profileData) {
   });
 }
 
+export async function fetchMyCandidateProfiles() {
+  const payload = await request('/api/profiles/candidate/', {
+    headers: candidateRequestHeaders(),
+  });
+
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.results)) {
+    return payload.results;
+  }
+
+  return payload ? [payload] : [];
+}
+
+export async function updateCandidateProfile(profileId, updateData = {}) {
+  return request(`/api/profiles/candidate/${profileId}/`, {
+    method: 'PATCH',
+    headers: candidateRequestHeaders(),
+    body: JSON.stringify(updateData),
+  });
+}
+
+export async function uploadCandidateAvatar(file) {
+  if (!file) {
+    throw new Error('Không tìm thấy file ảnh để tải lên.');
+  }
+
+  const apiBaseUrl = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
+  const requestUrl = apiBaseUrl
+    ? `${apiBaseUrl}/api/profiles/candidate/upload-avatar/`
+    : '/api/profiles/candidate/upload-avatar/';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  let response;
+  try {
+    response = await fetch(requestUrl, {
+      method: 'POST',
+      headers: {
+        ...(candidateRequestHeaders() || {}),
+      },
+      body: formData,
+    });
+  } catch (error) {
+    const networkError = new Error(error?.message || 'Lỗi kết nối API. Vui lòng kiểm tra mạng.');
+    networkError.status = 0;
+    throw networkError;
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  const payload = contentType.includes('application/json') ? await response.json() : await response.text();
+
+  if (!response.ok) {
+    const errorMessage =
+      typeof payload === 'object' && payload !== null ? pickErrorMessage(payload) : 'Tải ảnh đại diện thất bại.';
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
+  }
+
+  return payload;
+}
+
 export async function createCompanyProfile(profileData) {
   return request('/api/profiles/company/', {
     method: 'POST',
     headers: candidateRequestHeaders(),
     body: JSON.stringify(profileData),
-  });
-}
-
-export async function fetchCompanyProfile() {
-  return request('/api/profiles/company/me', {
-    headers: candidateRequestHeaders(),
   });
 }
 

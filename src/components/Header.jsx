@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { ROUTES, buildInDevelopmentPath } from "../constants/routes";
-import "./Header.css";
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ROUTES, buildInDevelopmentPath, buildRegisterPath, REGISTER_ROLES } from '../constants/routes';
+import { logoutUser, setStoredUserRole } from '../services/api';
+import './Header.css';
 
 const ROLE_OPTIONS = [
   { value: "guest", label: "Khách" },
@@ -69,31 +70,24 @@ export default function Header({ role, onRoleChange }) {
   );
   const roleTitle = TITLE_BY_ROLE[role] ?? TITLE_BY_ROLE.guest;
 
+  async function handleLogout() {
+    await logoutUser();
+    setStoredUserRole('guest');
+    onRoleChange('guest');
+    navigate(ROUTES.JOB_SEARCH);
+  }
+
   const accountMenuItems =
     role === "candidate"
       ? [
-          { label: "Hồ sơ của tôi", to: buildInDevelopmentPath("profile") },
-          {
-            label: "Điều chỉnh thông tin cá nhân",
-            to: buildInDevelopmentPath("settings"),
-          },
-          {
-            label: "Đăng xuất",
-            to: ROUTES.JOB_SEARCH,
-            onClick: () => onRoleChange("guest"),
-          },
+          { label: 'Hồ sơ của tôi', to: ROUTES.CANDIDATE_PROFILE },
+          { label: 'Điều chỉnh thông tin cá nhân', to: ROUTES.CANDIDATE_EDIT },
+          { label: 'Đăng xuất', to: ROUTES.JOB_SEARCH, onClick: handleLogout },
         ]
       : [
-          { label: "Hồ sơ công ty", to: buildInDevelopmentPath("profile") },
-          {
-            label: "Chỉnh sửa thông tin",
-            to: buildInDevelopmentPath("settings"),
-          },
-          {
-            label: "Đăng xuất",
-            to: ROUTES.JOB_SEARCH,
-            onClick: () => onRoleChange("guest"),
-          },
+          { label: 'Hồ sơ công ty', to: buildInDevelopmentPath('profile') },
+          { label: 'Chỉnh sửa thông tin', to: buildInDevelopmentPath('settings') },
+          { label: 'Đăng xuất', to: ROUTES.JOB_SEARCH, onClick: handleLogout },
         ];
 
   return (
@@ -115,7 +109,10 @@ export default function Header({ role, onRoleChange }) {
           <select
             id="role-select"
             value={role}
-            onChange={(event) => onRoleChange(event.target.value)}
+            onChange={(event) => {
+              onRoleChange(event.target.value);
+              setStoredUserRole(event.target.value);
+            }}
             className="role-select"
           >
             {ROLE_OPTIONS.map((option) => (
@@ -145,7 +142,7 @@ export default function Header({ role, onRoleChange }) {
               <button
                 type="button"
                 className="ghost-action-button"
-                onClick={() => navigate(buildInDevelopmentPath("login"))}
+                onClick={() => navigate(ROUTES.AUTH_LOGIN)}
               >
                 Đăng nhập
               </button>
@@ -169,7 +166,7 @@ export default function Header({ role, onRoleChange }) {
                       className="dropdown-item"
                       onClick={() => {
                         setShowRegisterMenu(false);
-                        navigate(buildInDevelopmentPath("register"));
+                        navigate(buildRegisterPath(REGISTER_ROLES.CANDIDATE));
                       }}
                     >
                       Đăng ký Ứng viên
@@ -179,7 +176,7 @@ export default function Header({ role, onRoleChange }) {
                       className="dropdown-item"
                       onClick={() => {
                         setShowRegisterMenu(false);
-                        navigate(buildInDevelopmentPath("register"));
+                        navigate(buildRegisterPath(REGISTER_ROLES.EMPLOYER));
                       }}
                     >
                       Đăng ký Nhà tuyển dụng
@@ -204,7 +201,7 @@ export default function Header({ role, onRoleChange }) {
                 type="button"
                 className="icon-button"
                 aria-label="Tin nhắn"
-                onClick={() => navigate(buildInDevelopmentPath("chat"))}
+                onClick={() => navigate(ROUTES.CHAT)}
               >
                 <ChatIcon />
               </button>
@@ -241,9 +238,11 @@ export default function Header({ role, onRoleChange }) {
                         key={item.label}
                         type="button"
                         className="dropdown-item"
-                        onClick={() => {
+                        onClick={async () => {
                           setShowAccountMenu(false);
-                          item.onClick?.();
+                          if (item.onClick) {
+                            await item.onClick();
+                          }
                           navigate(item.to);
                         }}
                       >
