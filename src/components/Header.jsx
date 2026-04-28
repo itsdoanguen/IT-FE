@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES, buildInDevelopmentPath, buildRegisterPath, REGISTER_ROLES } from '../constants/routes';
-import { logoutUser, setStoredUserRole } from '../services/api';
+import { getStoredUserRole, logoutUser, ROLE_CHANGED_EVENT, setStoredUserRole } from '../services/api';
 import './Header.css';
 
 const ROLE_OPTIONS = [
@@ -52,29 +52,55 @@ function BellIcon() {
   );
 }
 
+function useStoredUserRole(roleFallback) {
+  const [storedRole, setStoredRole] = useState(() => getStoredUserRole());
+
+  useEffect(() => {
+    const updateStoredRole = () => {
+      setStoredRole(getStoredUserRole());
+    };
+
+    window.addEventListener('storage', updateStoredRole);
+    window.addEventListener(ROLE_CHANGED_EVENT, updateStoredRole);
+
+    updateStoredRole();
+
+    return () => {
+      window.removeEventListener('storage', updateStoredRole);
+      window.removeEventListener(ROLE_CHANGED_EVENT, updateStoredRole);
+    };
+  }, []);
+
+  return storedRole || roleFallback || 'guest';
+}
+
 export default function Header({ role, onRoleChange }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showRegisterMenu, setShowRegisterMenu] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const activeRole = useStoredUserRole(role);
 
   useEffect(() => {
     setShowRegisterMenu(false);
     setShowAccountMenu(false);
-  }, [role]);
+  }, [activeRole]);
 
-  const navItems = useMemo(() => NAV_BY_ROLE[role] ?? NAV_BY_ROLE.guest, [role]);
-  const roleTitle = TITLE_BY_ROLE[role] ?? TITLE_BY_ROLE.guest;
+  const navItems = useMemo(() => NAV_BY_ROLE[activeRole] ?? NAV_BY_ROLE.guest, [activeRole]);
+  const roleTitle = TITLE_BY_ROLE[activeRole] ?? TITLE_BY_ROLE.guest;
 
   async function handleLogout() {
-    await logoutUser();
-    setStoredUserRole('guest');
-    onRoleChange('guest');
-    navigate(ROUTES.JOB_SEARCH);
+    try {
+      await logoutUser();
+    } finally {
+      setStoredUserRole('guest');
+      onRoleChange('guest');
+      navigate(ROUTES.JOB_SEARCH, { replace: true });
+    }
   }
 
   const accountMenuItems =
-    role === 'candidate'
+    activeRole === 'candidate'
       ? [
           { label: 'Hồ sơ của tôi', to: ROUTES.CANDIDATE_PROFILE },
           { label: 'Điều chỉnh thông tin cá nhân', to: ROUTES.CANDIDATE_EDIT },
@@ -94,26 +120,7 @@ export default function Header({ role, onRoleChange }) {
           <span className="logo-text">{roleTitle}</span>
         </button>
 
-        <div className="role-switcher">
-          <label htmlFor="role-select" className="role-label">
-            Chế độ xem
-          </label>
-          <select
-            id="role-select"
-            value={role}
-            onChange={(event) => {
-              onRoleChange(event.target.value);
-              setStoredUserRole(event.target.value);
-            }}
-            className="role-select"
-          >
-            {ROLE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+
 
         <nav className="header-nav" aria-label="Điều hướng chính">
           {navItems.map((item) => (
@@ -129,7 +136,7 @@ export default function Header({ role, onRoleChange }) {
         </nav>
 
         <div className="header-actions">
-          {role === 'guest' ? (
+          {activeRole === 'guest' ? (
             <>
               <button
                 type="button"
@@ -179,7 +186,7 @@ export default function Header({ role, onRoleChange }) {
             </>
           ) : (
             <>
-              {role === 'employer' ? (
+              {activeRole === 'employer' ? (
                 <button
                   type="button"
                   className="cta-button"
@@ -216,8 +223,8 @@ export default function Header({ role, onRoleChange }) {
                   }}
                   aria-expanded={showAccountMenu}
                 >
-                  <span className="avatar-circle">{role === 'candidate' ? 'UV' : 'CT'}</span>
-                  <span>{role === 'candidate' ? 'Tài khoản' : 'Công ty'}</span>
+                  <span className="avatar-circle">{activeRole === 'candidate' ? 'UV' : 'CT'}</span>
+                  <span>{activeRole === 'candidate' ? 'Tài khoản' : 'Công ty'}</span>
                 </button>
                 {showAccountMenu ? (
                   <div className="dropdown-menu account-menu">
@@ -230,6 +237,7 @@ export default function Header({ role, onRoleChange }) {
                           setShowAccountMenu(false);
                           if (item.onClick) {
                             await item.onClick();
+                            return;
                           }
                           navigate(item.to);
                         }}
