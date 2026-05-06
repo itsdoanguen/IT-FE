@@ -18,13 +18,11 @@ const NAV_BY_ROLE = {
   candidate: [
     { label: "Việc làm / Tìm việc", to: ROUTES.JOB_SEARCH },
     { label: "Matching", to: ROUTES.MATCHING },
-    { label: "Lịch sử công việc", to: buildInDevelopmentPath("job-history") },
+    { label: "Lịch sử công việc", to: ROUTES.JOB_HISTORY },
   ],
   employer: [
     { label: "Dashboard / Quản lý việc làm", to: ROUTES.RECRUITMENT_LIST },
     { label: "Quản lý ứng viên", to: ROUTES.CANDIDATES },
-    { label: "Tìm ứng viên / Matching", to: ROUTES.MATCHING },
-    { label: "Thông tin công ty", to: ROUTES.COMPANY_INFO },
   ],
 };
 
@@ -107,6 +105,7 @@ export default function Header({ role, onRoleChange }) {
     role === "candidate"
       ? [
           { label: 'Hồ sơ của tôi', to: ROUTES.CANDIDATE_PROFILE },
+          { label: 'Lịch sử ứng tuyển', to: ROUTES.JOB_HISTORY },
           { label: 'Điều chỉnh thông tin cá nhân', to: ROUTES.CANDIDATE_EDIT },
           { label: 'Đăng xuất', to: ROUTES.JOB_SEARCH, onClick: handleLogout },
         ]

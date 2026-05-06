@@ -18,6 +18,7 @@ export const ROUTES = {
   COMPANY_INFO: '/thong-tin-cong-ty',
   COMPANY_PROFILE: '/cong-ty/:id',
   MY_COMPANY_PROFILE: '/ho-so-cong-ty',
+  JOB_HISTORY: '/lich-su-cong-viec',
 };
 
 export const LEGACY_ROUTES = {

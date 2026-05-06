@@ -465,49 +465,57 @@
 .message-row {
   display: flex;
   gap: 12px;
-  max-width: 88%;
+  width: 100%;
 }
 
 .align-right {
-  margin-left: auto;
-  justify-content: flex-end;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
 }
 
 .message-bubble {
-  max-width: 100%;
-  padding: 16px 18px;
-  border-radius: 22px 22px 22px 8px;
-  background: rgba(255, 255, 255, 0.92);
+  max-width: 80%;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 12px 12px 12px 4px;
+  background: rgba(255, 255, 255, 0.95);
   color: var(--color-text-base);
-  box-shadow: 0 12px 28px rgba(25, 28, 29, 0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(67, 125, 161, 0.08);
+  word-wrap: break-word;
+  position: relative;
+  line-height: 1.4;
 }
 
 .is-outgoing {
-  border-radius: 22px 22px 8px 22px;
+  border-radius: 12px 12px 4px 12px;
   color: #fff;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-tertiary));
-  box-shadow: 0 16px 30px rgba(67, 125, 161, 0.2);
+  background: #1e5ec7;
+  border: none;
 }
 
 .message-bubble p {
+  display: inline;
   margin: 0;
-  line-height: 1.65;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
+  white-space: pre-line;
+  line-height: 1.3;
 }
 
 .message-meta {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 10px;
-  color: color-mix(in srgb, var(--color-text-muted) 80%, transparent);
-  font-size: 0.75rem;
-  font-weight: 700;
+  gap: 4px;
+  margin-left: 12px;
+  font-size: 0.7rem;
+  color: #8c97a8;
+  vertical-align: bottom;
+  position: relative;
+  top: 2px;
 }
 
 .is-outgoing .message-meta {
-  color: rgba(255, 255, 255, 0.76);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .composer-shell {
@@ -519,10 +527,11 @@
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  padding: 12px 14px;
-  border-radius: 24px;
-  background: rgba(248, 249, 250, 0.95);
-  box-shadow: inset 0 0 0 1px rgba(67, 125, 161, 0.08);
+  padding: 10px 16px;
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e1e6ed;
 }
 
 .composer textarea {
@@ -555,10 +564,24 @@
 }
 
 .send-button {
-  padding: 0 16px;
+  padding: 0 20px;
   color: #fff;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-tertiary));
-  box-shadow: 0 14px 22px rgba(67, 125, 161, 0.2);
+  height: 40px;
+  border-radius: 20px;
+  background: #1e5ec7;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(30, 94, 199, 0.2);
+}
+
+.send-button:hover {
+  background: #16469d;
+  transform: scale(1.02);
+  box-shadow: 0 6px 14px rgba(30, 94, 199, 0.3);
+}
+
+.send-button:active {
+  transform: scale(0.98);
 }
 
 .composer-hint {

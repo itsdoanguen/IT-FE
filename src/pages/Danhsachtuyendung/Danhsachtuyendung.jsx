@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { fetchJobPosts } from '../../services/api';
+import { fetchJobPosts, fetchCurrentUser, getStoredUserRole } from '../../services/api';
 import { ROUTES, buildJobDetailPath } from '../../constants/routes';
 import styles from './Danhsachtuyendung.module.css';
 
@@ -47,18 +47,30 @@ function Danhsachtuyendung() {
     setIsLoading(true);
     setErrorMessage('');
 
-    fetchJobPosts()
-      .then((jobs) => {
+    const loadJobs = async () => {
+      try {
+        let filters = {};
+        const role = getStoredUserRole();
+        
+        if (role === 'employer') {
+          const user = await fetchCurrentUser();
+          if (user?.id) {
+            filters.cong_ty = user.id;
+          }
+        }
+
+        const jobs = await fetchJobPosts(filters);
         if (!isActive) return;
         setApiPosts(jobs);
-      })
-      .catch((error) => {
+      } catch (error) {
         if (!isActive) return;
         setErrorMessage(error?.message || 'Không thể tải danh sách công việc.');
-      })
-      .finally(() => {
+      } finally {
         if (isActive) setIsLoading(false);
-      });
+      }
+    };
+
+    loadJobs();
 
     return () => {
       isActive = false;

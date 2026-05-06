@@ -28,7 +28,8 @@
 .profile-card,
 .side-card,
 .main-card,
-.right-card {
+.right-card,
+.action-card {
   border: 1px solid var(--surface-border);
   border-radius: 14px;
   background: #ffffff;
@@ -38,8 +39,14 @@
 .profile-card,
 .side-card,
 .main-card,
-.right-card {
+.right-card,
+.action-card {
   padding: 1rem;
+}
+
+.action-card {
+  border: 1.5px solid #1e5ec7;
+  background-color: #f8faff;
 }
 
 .avatar-wrap {
@@ -475,4 +482,27 @@
   .card-actions {
     width: 100%;
   }
+}
+
+.disabled-btn {
+  background: #98a2b3 !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+}
+
+.danger-button {
+  background: #d92d20;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.5rem 0.78rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.18s ease;
+}
+
+.danger-button:hover {
+  background: #b42318;
+  transform: translateY(-1px);
 }

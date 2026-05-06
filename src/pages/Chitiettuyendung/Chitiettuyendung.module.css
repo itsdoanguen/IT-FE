@@ -72,3 +72,12 @@
 .delete-btn:hover {
     background-color: #c82333;
 }
+
+.applied-btn {
+    background-color: #6c757d !important;
+    cursor: not-allowed;
+}
+
+.applied-btn:hover {
+    background-color: #6c757d !important;
+}

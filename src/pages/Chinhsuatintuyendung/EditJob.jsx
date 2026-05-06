@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchJobDetail, updateJobPost } from '../../services/api'; // Đường dẫn import chuẩn xác
+import { fetchJobDetail, updateJobPost, getStoredUserRole } from '../../services/api'; // Đường dẫn import chuẩn xác
+import { ROUTES } from '../../constants/routes';
 import './EditJob.css';
 
 const EditJob = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (getStoredUserRole() !== 'employer') {
+      navigate(ROUTES.HOME, { replace: true });
+    }
+  }, [navigate]);
   
   const [formData, setFormData] = useState({
     title: '',

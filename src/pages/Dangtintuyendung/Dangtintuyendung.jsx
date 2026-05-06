@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createJobPost } from '../../services/api';
+import { createJobPost, getStoredUserRole } from '../../services/api';
 import { ROUTES } from '../../constants/routes';
+import { useEffect } from 'react';
 import styles from './Dangtintuyendung.module.css';
 
 const requirementTags = ['ReactJS', 'HTML/CSS', 'REST API'];
@@ -76,6 +77,13 @@ function Field({ label, children, wide = false }) {
 
 function Dangtintuyendung() {
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (getStoredUserRole() !== 'employer') {
+      navigate(ROUTES.HOME, { replace: true });
+    }
+  }, [navigate]);
+  
   const formRef = useRef(null);
   const initialDraft = getSavedDraft();
   const [skills, setSkills] = useState(initialDraft.skills);
