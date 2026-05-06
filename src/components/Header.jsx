@@ -111,8 +111,8 @@ export default function Header({ role, onRoleChange }) {
           { label: 'Đăng xuất', to: ROUTES.JOB_SEARCH, onClick: handleLogout },
         ]
       : [
-          { label: 'Hồ sơ công ty', to: buildInDevelopmentPath('profile') },
-          { label: 'Chỉnh sửa thông tin', to: buildInDevelopmentPath('settings') },
+          { label: 'Hồ sơ công ty', to: ROUTES.MY_COMPANY_PROFILE },
+          { label: 'Chỉnh sửa thông tin', to: ROUTES.MY_COMPANY_PROFILE },
           { label: 'Đăng xuất', to: ROUTES.JOB_SEARCH, onClick: handleLogout },
         ];
 

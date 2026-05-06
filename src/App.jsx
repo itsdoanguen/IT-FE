@@ -134,6 +134,7 @@ function App() {
             <Route path={ROUTES.IN_DEVELOPMENT} element={<InDevelopment />} />
             <Route path={ROUTES.JOB_EDIT} element={<EditJob />} />
             <Route path={ROUTES.COMPANY_PROFILE} element={<CompanyProfile />} />
+            <Route path={ROUTES.MY_COMPANY_PROFILE} element={<CompanyProfile />} />
 
             <Route
               path={LEGACY_ROUTES.JOB_POST}

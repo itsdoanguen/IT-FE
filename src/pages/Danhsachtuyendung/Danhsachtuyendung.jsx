@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchJobPosts } from '../../services/api';
-import { ROUTES } from '../../constants/routes';
+import { ROUTES, buildJobDetailPath } from '../../constants/routes';
 import styles from './Danhsachtuyendung.module.css';
 
 function SearchIcon() {
@@ -156,7 +156,7 @@ function Danhsachtuyendung() {
                       className={styles['recruitment-apply-btn']}
                       type="button"
                       onClick={() => {
-                        navigate(ROUTES.JOB_DETAIL, {
+                        navigate(buildJobDetailPath(post.id), {
                           state: {
                             recruitmentData: {
                               id: post.id,

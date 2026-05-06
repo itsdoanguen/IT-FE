@@ -583,9 +583,17 @@ export async function fetchCandidateDetail(candidateId) {
   });
 }
 
-export async function fetchCompanyProfile(companyId) {
+export async function fetchCompanyProfileById(companyId) {
   return request(`/api/profiles/company/${companyId}/`, {
     headers: candidateRequestHeaders(),
+  });
+}
+
+export async function updateCompanyProfile(companyId, profileData) {
+  return request(`/api/profiles/company/${companyId}/`, {
+    method: 'PATCH',
+    headers: candidateRequestHeaders(),
+    body: JSON.stringify(profileData),
   });
 }
 

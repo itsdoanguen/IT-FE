@@ -79,7 +79,12 @@ function Chitiettuyendung() {
   }, [recruitmentId, location.state]);
 
   const handleEdit = () => {
-    navigate(buildJobEditPath(recruitmentId || 1));
+    const finalId = recruitmentData.id || recruitmentId;
+    if (finalId) {
+      navigate(buildJobEditPath(finalId));
+    } else {
+      setErrorMessage('Không tìm thấy ID tin tuyển dụng để chỉnh sửa.');
+    }
   };
 
   const handleDelete = () => {

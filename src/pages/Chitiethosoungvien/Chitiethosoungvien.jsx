@@ -251,10 +251,6 @@ function Chitiethosoungvien() {
   return (
     <section className={styles['candidate-profile-page']}>
       <div className={styles['candidate-profile-shell']}>
-        {errorMessage ? (
-          <p className={styles['error']}>{errorMessage}</p>
-        ) : null}
-
         <div className={styles['candidate-layout']}>
           <aside className={styles['left-column']}>
             <article className={styles['profile-card']}>
