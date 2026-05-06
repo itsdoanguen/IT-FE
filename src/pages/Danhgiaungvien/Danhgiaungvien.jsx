@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './Danhgiaungvien.module.css';
 import { fetchCandidateEvaluation, updateCandidateEvaluation } from '../../services/api';
 
@@ -13,6 +13,8 @@ const STATUS_OPTIONS = [
 const Danhgiaungvien = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const jobId = searchParams.get('job_id');
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(0);
@@ -22,7 +24,7 @@ const Danhgiaungvien = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchCandidateEvaluation(id);
+        const data = await fetchCandidateEvaluation(id, jobId);
         setCandidate(data);
         setRating(data.rating || 0);
         setComment(data.comment || '');
@@ -42,8 +44,9 @@ const Danhgiaungvien = () => {
         status,
         rating,
         comment,
-      });
+      }, jobId);
       alert('Đã cập nhật thông tin đánh giá ứng viên thành công!');
+      navigate(`/quan-ly-ung-vien/${id}`);
     } catch (error) {
       console.error('Lỗi khi cập nhật đánh giá:', error);
       alert('Có lỗi xảy ra khi cập nhật thông tin.');

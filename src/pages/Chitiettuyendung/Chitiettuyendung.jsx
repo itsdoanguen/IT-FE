@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { fetchJobDetail } from "../../services/api";
+import { fetchJobDetail, getStoredUserRole, applyForJob } from "../../services/api";
 import { ROUTES, buildInDevelopmentPath, buildJobEditPath } from "../../constants/routes";
 import styles from "./Chitiettuyendung.module.css";
 
@@ -63,6 +63,8 @@ function Chitiettuyendung() {
           description: data?.description ?? data?.noi_dung ?? defaultRecruitmentData.description,
           requirements: data?.requirements ?? data?.yeu_cau ?? defaultRecruitmentData.requirements,
           benefits: data?.benefits ?? data?.quyen_loi ?? defaultRecruitmentData.benefits,
+          hasApplied: data?.has_applied ?? false,
+          isHiredElsewhere: data?.is_hired_elsewhere ?? false,
         });
       })
       .catch((error) => {
@@ -79,7 +81,12 @@ function Chitiettuyendung() {
   }, [recruitmentId, location.state]);
 
   const handleEdit = () => {
-    navigate(buildJobEditPath(recruitmentId || 1));
+    const finalId = recruitmentData.id || recruitmentId;
+    if (finalId) {
+      navigate(buildJobEditPath(finalId));
+    } else {
+      setErrorMessage('Không tìm thấy ID tin tuyển dụng để chỉnh sửa.');
+    }
   };
 
   const handleDelete = () => {
@@ -92,6 +99,25 @@ function Chitiettuyendung() {
       return;
     }
     navigate(ROUTES.CANDIDATES);
+  };
+
+  const handleApply = async () => {
+    try {
+      setIsLoading(true);
+      await applyForJob(recruitmentId);
+      setRecruitmentData(prev => ({ ...prev, hasApplied: true }));
+      alert('Ứng tuyển thành công!');
+    } catch (error) {
+      const errorMsg = error?.message || '';
+      if (errorMsg.includes('đã ứng tuyển') || errorMsg.includes('already applied')) {
+        setRecruitmentData(prev => ({ ...prev, hasApplied: true }));
+        alert('Bạn đã ứng tuyển vào công việc này rồi.');
+      } else {
+        alert(errorMsg || 'Lỗi khi ứng tuyển.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -155,17 +181,34 @@ function Chitiettuyendung() {
           </div>
         </section>
 
-        <section className={styles['actions']}>
-          <button className={styles['edit-btn']} type="button" onClick={handleEdit}>
-            11. Chỉnh sửa thông tin đăng tuyển
-          </button>
-          <button className={styles['delete-btn']} type="button" onClick={handleDelete}>
-            12. Xóa thông tin đăng tuyển
-          </button>
-          <button className={styles['edit-btn']} type="button" onClick={handleViewCandidates}>
-            13. Xem danh sách ứng viên phù hợp
-          </button>
-        </section>
+        {getStoredUserRole() === 'candidate' && (
+          <section className={styles['actions']}>
+            <button 
+              className={`${styles['edit-btn']} ${(recruitmentData.hasApplied || recruitmentData.isHiredElsewhere) ? styles['applied-btn'] : ''}`} 
+              type="button" 
+              onClick={handleApply}
+              disabled={recruitmentData.hasApplied || recruitmentData.isHiredElsewhere}
+            >
+              {recruitmentData.isHiredElsewhere 
+                ? 'Bạn đã trúng tuyển' 
+                : (recruitmentData.hasApplied ? 'Đã ứng tuyển' : 'Ứng tuyển ngay')}
+            </button>
+          </section>
+        )}
+
+        {getStoredUserRole() === 'employer' && (
+          <section className={styles['actions']}>
+            <button className={styles['edit-btn']} type="button" onClick={handleEdit}>
+              11. Chỉnh sửa thông tin đăng tuyển
+            </button>
+            <button className={styles['delete-btn']} type="button" onClick={handleDelete}>
+              12. Xóa thông tin đăng tuyển
+            </button>
+            <button className={styles['edit-btn']} type="button" onClick={handleViewCandidates}>
+              13. Xem danh sách ứng tuyển
+            </button>
+          </section>
+        )}
       </div>
     </main>
   );

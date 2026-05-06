@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { fetchJobPosts } from '../../services/api';
-import { ROUTES } from '../../constants/routes';
+import { fetchJobPosts, fetchCurrentUser, getStoredUserRole } from '../../services/api';
+import { ROUTES, buildJobDetailPath } from '../../constants/routes';
 import styles from './Danhsachtuyendung.module.css';
 
 function SearchIcon() {
@@ -47,18 +47,30 @@ function Danhsachtuyendung() {
     setIsLoading(true);
     setErrorMessage('');
 
-    fetchJobPosts()
-      .then((jobs) => {
+    const loadJobs = async () => {
+      try {
+        let filters = {};
+        const role = getStoredUserRole();
+        
+        if (role === 'employer') {
+          const user = await fetchCurrentUser();
+          if (user?.id) {
+            filters.cong_ty = user.id;
+          }
+        }
+
+        const jobs = await fetchJobPosts(filters);
         if (!isActive) return;
         setApiPosts(jobs);
-      })
-      .catch((error) => {
+      } catch (error) {
         if (!isActive) return;
         setErrorMessage(error?.message || 'Không thể tải danh sách công việc.');
-      })
-      .finally(() => {
+      } finally {
         if (isActive) setIsLoading(false);
-      });
+      }
+    };
+
+    loadJobs();
 
     return () => {
       isActive = false;
@@ -156,7 +168,7 @@ function Danhsachtuyendung() {
                       className={styles['recruitment-apply-btn']}
                       type="button"
                       onClick={() => {
-                        navigate(ROUTES.JOB_DETAIL, {
+                        navigate(buildJobDetailPath(post.id), {
                           state: {
                             recruitmentData: {
                               id: post.id,

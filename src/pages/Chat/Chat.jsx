@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchChatConversations, fetchChatMessages, sendChatMessage } from '../../services/api';
+import { useSearchParams } from 'react-router-dom';
+import { fetchChatConversations, fetchChatMessages, sendChatMessage, fetchCandidateDetail, fetchCompanyProfileById, getStoredUserRole } from '../../services/api';
 import styles from './Chat.module.css';
 
 function formatDraftTime() {
@@ -28,6 +29,9 @@ function formatMessageTime(value) {
 }
 
 function Chat() {
+  const [searchParams] = useSearchParams();
+  const peerIdFromUrl = searchParams.get('peer_user_id');
+
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -37,6 +41,7 @@ function Chat() {
   const [isSending, setIsSending] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [draft, setDraft] = useState('');
+  const [newPeerInfo, setNewPeerInfo] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -49,24 +54,42 @@ function Chat() {
         const payload = await fetchChatConversations({ page: 1, limit: 50 });
         const results = Array.isArray(payload?.results) ? payload.results : [];
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         setConversations(results);
-        setActiveConversationId((currentId) => {
-          if (currentId && results.some((item) => item.peer_user_id === currentId)) {
-            return currentId;
+
+        if (peerIdFromUrl) {
+          setActiveConversationId(peerIdFromUrl);
+          
+          const existing = results.find(c => String(c.peer_user_id) === String(peerIdFromUrl));
+          if (!existing) {
+            try {
+              const role = getStoredUserRole();
+              let peerData;
+              if (role === 'employer') {
+                peerData = await fetchCandidateDetail(peerIdFromUrl);
+              } else {
+                peerData = await fetchCompanyProfileById(peerIdFromUrl);
+              }
+              
+              if (isMounted) {
+                setNewPeerInfo({
+                  peer_user_id: peerIdFromUrl,
+                  peer_display_name: peerData.full_name || peerData.ten_cong_ty || 'Người dùng mới',
+                  peer_role: role === 'employer' ? 'ung_vien' : 'cong_ty'
+                });
+              }
+            } catch (err) {
+              console.error('Failed to fetch peer info:', err);
+            }
           }
-
-          return results[0]?.peer_user_id ?? null;
-        });
-      } catch (error) {
-        if (!isMounted) {
-          return;
+        } else if (results.length > 0) {
+          setActiveConversationId(results[0].peer_user_id);
         }
-
-        setLoadError(error?.message || 'Không thể tải danh sách hội thoại.');
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error?.message || 'Không thể tải danh sách hội thoại.');
+        }
       } finally {
         if (isMounted) {
           setIsConversationLoading(false);
@@ -75,10 +98,8 @@ function Chat() {
     }
 
     loadConversations();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    return () => { isMounted = false; };
+  }, [peerIdFromUrl]);
 
   useEffect(() => {
     let isMounted = true;
@@ -129,14 +150,19 @@ function Chat() {
   }, [conversations, conversationSearch]);
 
   const activeConversation = useMemo(
-    () => conversations.find((conversation) => conversation.peer_user_id === activeConversationId) ?? null,
-    [conversations, activeConversationId]
+    () => {
+      const existing = conversations.find((conversation) => String(conversation.peer_user_id) === String(activeConversationId));
+      if (existing) return existing;
+      if (newPeerInfo && String(newPeerInfo.peer_user_id) === String(activeConversationId)) return newPeerInfo;
+      return null;
+    },
+    [conversations, activeConversationId, newPeerInfo]
   );
 
   const handleSendMessage = async () => {
     const content = draft.trim();
 
-    if (!content || !activeConversation || isSending) {
+    if (!content || !activeConversationId || isSending) {
       return;
     }
 
@@ -145,23 +171,35 @@ function Chat() {
 
     try {
       const newMessage = await sendChatMessage({
-        nguoi_nhan_id: activeConversation.peer_user_id,
+        nguoi_nhan_id: activeConversationId,
         noi_dung_tin_nhan: content,
       });
 
       setMessages((currentMessages) => [...currentMessages, newMessage]);
       setConversations((currentConversations) => {
+        let found = false;
         const nextConversations = currentConversations.map((conversation) => {
-          if (conversation.peer_user_id !== activeConversation.peer_user_id) {
-            return conversation;
+          if (String(conversation.peer_user_id) === String(activeConversationId)) {
+            found = true;
+            return {
+              ...conversation,
+              last_message: newMessage.noi_dung_tin_nhan,
+              last_message_time: newMessage.thoi_gian_gui,
+            };
           }
 
-          return {
-            ...conversation,
+          return conversation;
+        });
+
+        if (!found && activeConversation) {
+          nextConversations.push({
+            peer_user_id: activeConversation.peer_user_id,
+            peer_display_name: activeConversation.peer_display_name,
+            peer_role: activeConversation.peer_role,
             last_message: newMessage.noi_dung_tin_nhan,
             last_message_time: newMessage.thoi_gian_gui,
-          };
-        });
+          });
+        }
 
         return [...nextConversations].sort(
           (first, second) => new Date(second.last_message_time).getTime() - new Date(first.last_message_time).getTime()
@@ -269,7 +307,7 @@ function Chat() {
                 {!message.is_outgoing ? <span className={`${styles['avatar']} ${styles['message-avatar']} ${styles['accent-secondary']}`} aria-hidden="true">{String(activeConversation?.peer_display_name || 'A').charAt(0).toUpperCase()}</span> : null}
 
                 <div className={`${styles['message-bubble']} ${message.is_outgoing ? styles['is-outgoing'] : ''}`}>
-                  <p>{message.noi_dung_tin_nhan}</p>
+                  <p>{String(message.noi_dung_tin_nhan || '').trim()}</p>
                   <div className={styles['message-meta']}>
                     <span>{formatMessageTime(message.thoi_gian_gui)}</span>
                     {message.is_outgoing ? <span>Đã gửi</span> : null}

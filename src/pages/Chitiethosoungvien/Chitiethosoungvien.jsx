@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { buildInDevelopmentPath, ROUTES } from '../../constants/routes';
-import { fetchMyCandidateProfiles } from '../../services/api';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { buildInDevelopmentPath, ROUTES, buildCandidateEvaluationPath } from '../../constants/routes';
+import { fetchMyCandidateProfiles, getStoredUserRole, fetchCandidateDetail, updateCandidateEvaluation, fetchCandidateEvaluation } from '../../services/api';
 import { downloadCVFile, generatePDFClientSide } from '../../services/cvService';
 import styles from './Chitiethosoungvien.module.css';
 import './Chitiethosoungvien.printable.css';
@@ -146,6 +146,9 @@ function normalizeCandidateProfile(payload) {
 
 function Chitiethosoungvien() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const jobId = searchParams.get('job_id');
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -153,13 +156,24 @@ function Chitiethosoungvien() {
   const [downloadError, setDownloadError] = useState(null);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('professional');
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState(null);
+  const [hasEvaluation, setHasEvaluation] = useState(false);
+
+  const role = getStoredUserRole();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const profiles = await fetchMyCandidateProfiles();
-        const profileData = profiles.length > 0 ? profiles[0] : null;
+        let profileData = null;
+
+        if (id) {
+          profileData = await fetchCandidateDetail(id);
+        } else {
+          const profiles = await fetchMyCandidateProfiles();
+          profileData = profiles.length > 0 ? profiles[0] : null;
+        }
 
         if (!profileData) {
           throw new Error('Không tìm thấy hồ sơ');
@@ -168,9 +182,23 @@ function Chitiethosoungvien() {
         const normalizedProfile = normalizeCandidateProfile(profileData);
         setProfile(normalizedProfile);
         setError(null);
+
+        // Fetch application/evaluation status for employers
+        if (id && role === 'employer') {
+          try {
+            const evalData = await fetchCandidateEvaluation(id, jobId);
+            setApplicationStatus(evalData?.status);
+            // Check if rating is set (1-5) or if there's a non-empty comment
+            const hasReview = (evalData?.rating && Number(evalData.rating) > 0) || 
+                              (evalData?.comment && String(evalData.comment).trim().length > 0);
+            setHasEvaluation(!!hasReview);
+          } catch (err) {
+            console.error('Lỗi khi tải trạng thái đánh giá:', err);
+          }
+        }
       } catch (err) {
         console.error('Lỗi khi tải hồ sơ:', err);
-        setError(err?.message || 'Không thể tải hồ sơ. Vui lòng đăng nhập lại.');
+        setError(err?.message || 'Không thể tải hồ sơ.');
         setProfile(null);
       } finally {
         setLoading(false);
@@ -178,7 +206,7 @@ function Chitiethosoungvien() {
     };
 
     fetchProfile();
-  }, []);
+  }, [id]);
 
   // Handler for downloading CV from backend (Phase 2)
   const handleDownloadCVFromBackend = async () => {
@@ -221,6 +249,40 @@ function Chitiethosoungvien() {
     }
   };
 
+  const handleAccept = async () => {
+    if (!id) return;
+    try {
+      setIsAccepting(true);
+      await updateCandidateEvaluation(id, { status: 'chap_nhan' }, jobId);
+      setApplicationStatus('chap_nhan');
+      alert('Đã chấp nhận ứng viên thành công!');
+    } catch (err) {
+      alert('Lỗi khi chấp nhận ứng viên: ' + err.message);
+    } finally {
+      setIsAccepting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!id) return;
+    try {
+      setIsAccepting(true);
+      await updateCandidateEvaluation(id, { status: 'tu_choi' }, jobId);
+      setApplicationStatus('tu_choi');
+      alert('Đã từ chối ứng viên.');
+    } catch (err) {
+      alert('Lỗi khi từ chối ứng viên: ' + err.message);
+    } finally {
+      setIsAccepting(false);
+    }
+  };
+
+  const handleChat = () => {
+    if (profile?.candidate_id) {
+      navigate(`${ROUTES.CHAT}?peer_user_id=${profile.candidate_id}`);
+    }
+  };
+
   // Render loading state
   if (loading) {
     return (
@@ -251,10 +313,6 @@ function Chitiethosoungvien() {
   return (
     <section className={styles['candidate-profile-page']}>
       <div className={styles['candidate-profile-shell']}>
-        {errorMessage ? (
-          <p className={styles['error']}>{errorMessage}</p>
-        ) : null}
-
         <div className={styles['candidate-layout']}>
           <aside className={styles['left-column']}>
             <article className={styles['profile-card']}>
@@ -282,6 +340,54 @@ function Chitiethosoungvien() {
                 </li>
               </ul>
             </article>
+
+            {role === 'employer' && (
+              <article className={styles['action-card']}>
+                {(applicationStatus && applicationStatus !== 'cho_duyet') ? (
+                  <button
+                    type="button"
+                    className={`${styles['primary-button']} ${hasEvaluation ? styles['disabled-btn'] : ''}`}
+                    onClick={() => {
+                      const nextSearch = jobId ? `?job_id=${jobId}` : '';
+                      navigate(`${buildCandidateEvaluationPath(id)}${nextSearch}`);
+                    }}
+                    disabled={hasEvaluation}
+                    style={{ width: '100%', marginBottom: '10px' }}
+                  >
+                    {hasEvaluation ? 'Đã đánh giá' : 'Đánh giá ứng viên'}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className={styles['primary-button']}
+                      onClick={handleAccept}
+                      disabled={isAccepting}
+                      style={{ width: '100%', marginBottom: '10px' }}
+                    >
+                      {isAccepting ? 'Đang xử lý...' : 'Chấp nhận ứng viên'}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles['danger-button']}
+                      onClick={handleReject}
+                      disabled={isAccepting}
+                      style={{ width: '100%', marginBottom: '10px' }}
+                    >
+                      {isAccepting ? 'Đang xử lý...' : 'Từ chối ứng viên'}
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  className={styles['ghost-button']}
+                  onClick={handleChat}
+                  style={{ width: '100%' }}
+                >
+                  Chat cùng ứng viên
+                </button>
+              </article>
+            )}
 
             <article className={styles['side-card']}>
               <h3>Kỹ năng</h3>
@@ -314,13 +420,15 @@ function Chitiethosoungvien() {
               <div className={styles['card-head']}>
                 <h2>Giới thiệu bản thân</h2>
                 <div className={styles['card-actions']}>
-                  <button
-                    type="button"
-                    className={styles['ghost-button']}
-                    onClick={() => navigate(ROUTES.CANDIDATE_EDIT)}
-                  >
-                    Chỉnh sửa HS
-                  </button>
+                  {role !== 'employer' && (
+                    <button
+                      type="button"
+                      className={styles['ghost-button']}
+                      onClick={() => navigate(ROUTES.CANDIDATE_EDIT)}
+                    >
+                      Chỉnh sửa HS
+                    </button>
+                  )}
                   <button
                     type="button"
                     className={styles['primary-button']}
@@ -462,31 +570,33 @@ function Chitiethosoungvien() {
             </article>
           </main>
 
-          <aside className={styles['right-column']}>
-            <article className={styles['right-card']}>
-              <h3>Nhà tuyển dụng phù hợp</h3>
-              <div className={styles['employer-list']}>
-                {displayProfile.matched_employers.map((employer, index) => (
-                  <article key={`${employer.company}-${index}`} className={styles['employer-item']}>
-                    <span className={styles['employer-logo']}>{employer.company.charAt(0)}</span>
-                    <div>
-                      <h4>{employer.company}</h4>
-                      <p>{employer.role}</p>
-                      <small>{employer.score}</small>
-                    </div>
-                  </article>
-                ))}
-              </div>
+          {role !== 'employer' && (
+            <aside className={styles['right-column']}>
+              <article className={styles['right-card']}>
+                <h3>Nhà tuyển dụng phù hợp</h3>
+                <div className={styles['employer-list']}>
+                  {displayProfile.matched_employers.map((employer, index) => (
+                    <article key={`${employer.company}-${index}`} className={styles['employer-item']}>
+                      <span className={styles['employer-logo']}>{employer.company.charAt(0)}</span>
+                      <div>
+                        <h4>{employer.company}</h4>
+                        <p>{employer.role}</p>
+                        <small>{employer.score}</small>
+                      </div>
+                    </article>
+                  ))}
+                </div>
 
-              <button
-                type="button"
-                className={styles['suggestion-button']}
-                onClick={() => navigate(buildInDevelopmentPath('matched-employers'))}
-              >
-                Xem tất cả gợi ý
-              </button>
-            </article>
-          </aside>
+                <button
+                  type="button"
+                  className={styles['suggestion-button']}
+                  onClick={() => navigate(buildInDevelopmentPath('matched-employers'))}
+                >
+                  Xem tất cả gợi ý
+                </button>
+              </article>
+            </aside>
+          )}
         </div>
       </div>
     </section>

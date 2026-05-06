@@ -314,6 +314,8 @@ function normalizeCandidateFilters(filters = {}) {
     salary_min: filters.salary_min || '',
     salary_max: filters.salary_max || '',
     availability_slots: availabilitySlots.length ? JSON.stringify(availabilitySlots) : '',
+    job_id: filters.job_id || '',
+    status: filters.status || '',
   };
 }
 
@@ -583,9 +585,17 @@ export async function fetchCandidateDetail(candidateId) {
   });
 }
 
-export async function fetchCompanyProfile(companyId) {
+export async function fetchCompanyProfileById(companyId) {
   return request(`/api/profiles/company/${companyId}/`, {
     headers: candidateRequestHeaders(),
+  });
+}
+
+export async function updateCompanyProfile(companyId, profileData) {
+  return request(`/api/profiles/company/${companyId}/`, {
+    method: 'PATCH',
+    headers: candidateRequestHeaders(),
+    body: JSON.stringify(profileData),
   });
 }
 
@@ -613,7 +623,9 @@ export async function sendChatMessage(payload = {}) {
 
 // Lấy chi tiết công việc để đổ vào Form
 export async function fetchJobDetail(id) {
-  return request(`/api/jobs/posts/${id}/`);
+  return request(`/api/jobs/posts/${id}/`, {
+    headers: candidateRequestHeaders(),
+  });
 }
 
 // Cập nhật công việc (PATCH)
@@ -626,18 +638,36 @@ export async function updateJobPost(id, updateData) {
 }
 
 // Lấy thông tin đánh giá ứng viên
-export async function fetchCandidateEvaluation(candidateId) {
-  return request(`/api/v1/candidates/${candidateId}/evaluation/`, {
+export async function fetchCandidateEvaluation(candidateId, jobId = '') {
+  const queryString = jobId ? `?job_id=${jobId}` : '';
+  return request(`/api/v1/candidates/${candidateId}/evaluation/${queryString}`, {
     headers: candidateRequestHeaders(),
   });
 }
 
 // Cập nhật đánh giá ứng viên
-export async function updateCandidateEvaluation(candidateId, payload) {
-  return request(`/api/v1/candidates/${candidateId}/evaluation/`, {
+export async function updateCandidateEvaluation(candidateId, payload, jobId = '') {
+  const queryString = jobId ? `?job_id=${jobId}` : '';
+  return request(`/api/v1/candidates/${candidateId}/evaluation/${queryString}`, {
     method: 'POST',
     headers: candidateRequestHeaders(),
     body: JSON.stringify(payload),
+  });
+}
+
+// Lấy danh sách đơn ứng tuyển của ứng viên hiện tại
+export async function fetchMyApplications() {
+  return request('/api/applications/', {
+    headers: candidateRequestHeaders(),
+  });
+}
+
+// Ứng tuyển vào công việc
+export async function applyForJob(jobId) {
+  return request('/api/applications/', {
+    method: 'POST',
+    headers: candidateRequestHeaders(),
+    body: JSON.stringify({ tin: jobId }),
   });
 }
 

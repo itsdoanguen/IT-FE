@@ -4,7 +4,7 @@ export const ROUTES = {
   AUTH_LOGIN: '/dang-nhap',
   AUTH_REGISTER: '/dang-ky',
   RECRUITMENT_LIST: '/danh-sach-tuyen-dung',
-  JOB_DETAIL: '/chi-tiet-tuyen-dung',
+  JOB_DETAIL: '/chi-tiet-tuyen-dung/:id',
   JOB_POST: '/dang-tin-tuyen-dung',
   JOB_EDIT: '/jobs/edit/:id', 
   MATCHING: '/man-hinh-matching',
@@ -17,6 +17,8 @@ export const ROUTES = {
   IN_DEVELOPMENT: '/in-development',
   COMPANY_INFO: '/thong-tin-cong-ty',
   COMPANY_PROFILE: '/cong-ty/:id',
+  MY_COMPANY_PROFILE: '/ho-so-cong-ty',
+  JOB_HISTORY: '/lich-su-cong-viec',
 };
 
 export const LEGACY_ROUTES = {
@@ -45,6 +47,10 @@ export function buildCandidateEvaluationPath(id) {
 
 export function buildJobEditPath(id) {
   return ROUTES.JOB_EDIT.replace(':id', id);
+}
+
+export function buildJobDetailPath(id) {
+  return ROUTES.JOB_DETAIL.replace(':id', id);
 }
 
 export function buildInDevelopmentPath(feature) {

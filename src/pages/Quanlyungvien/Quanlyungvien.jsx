@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { fetchCandidates, fetchMatchedCandidates } from '../../services/api';
+import { fetchCandidates, fetchJobPosts, fetchCurrentUser } from '../../services/api';
 import { buildCandidateDetailPath, buildCandidateEvaluationPath, buildInDevelopmentPath } from '../../constants/routes';
 import styles from './Quanlyungvien.module.css';
 
-const TAB_OPTIONS = [
-  { value: 'all', label: 'Tất cả' },
-  { value: 'new', label: 'Mới' },
-  { value: 'viewed', label: 'Đã xem' },
-  { value: 'matched', label: 'Phù hợp' },
+const tabs = [
+  { id: 'new', label: 'Ứng tuyển mới' },
+  { id: 'accepted', label: 'Đã chấp nhận' },
+  { id: 'rejected', label: 'Đã từ chối' },
 ];
 
 const DEFAULT_AVATAR =
@@ -44,20 +43,6 @@ function formatRelativeDate(isoString) {
   }).format(parsedDate);
 }
 
-function isRecentlyUpdated(isoString, thresholdDays = 7) {
-  if (!isoString) {
-    return false;
-  }
-
-  const parsedDate = new Date(isoString);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return false;
-  }
-
-  const elapsedDays = (Date.now() - parsedDate.getTime()) / (1000 * 60 * 60 * 24);
-  return elapsedDays <= thresholdDays;
-}
-
 function parseAvailabilitySlots(inputValue) {
   return String(inputValue || '')
     .split(',')
@@ -72,7 +57,7 @@ function Quanlyungvien() {
 
   const jobId = searchParams.get('job_id') || '';
 
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('new');
   const [searchKeyword, setSearchKeyword] = useState(searchParams.get('q') || '');
   const [locationFilter, setLocationFilter] = useState(searchParams.get('location') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'matching_desc');
@@ -94,6 +79,22 @@ function Quanlyungvien() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [candidatesPayload, setCandidatesPayload] = useState({ page: 1, limit: 20, total: 0, results: [] });
+  const [companyJobs, setCompanyJobs] = useState([]);
+
+  useEffect(() => {
+    async function loadCompanyJobs() {
+      try {
+        const user = await fetchCurrentUser();
+        if (user?.id) {
+          const jobs = await fetchJobPosts({ cong_ty: user.id });
+          setCompanyJobs(jobs);
+        }
+      } catch (err) {
+        console.error('Failed to load company jobs:', err);
+      }
+    }
+    loadCompanyJobs();
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -106,6 +107,7 @@ function Quanlyungvien() {
         page,
         limit,
         sort: appliedFilters.sort,
+        status: activeTab,
         q: appliedFilters.q,
         location: appliedFilters.location,
         salary_min: appliedFilters.salary_min,
@@ -114,9 +116,10 @@ function Quanlyungvien() {
       };
 
       try {
-        const payload = jobId
-          ? await fetchMatchedCandidates(jobId, requestParams)
-          : await fetchCandidates(requestParams);
+        const payload = await fetchCandidates({
+          ...requestParams,
+          job_id: jobId
+        });
 
         if (!isActive) {
           return;
@@ -147,25 +150,11 @@ function Quanlyungvien() {
     return () => {
       isActive = false;
     };
-  }, [appliedFilters, jobId, limit, page]);
+  }, [appliedFilters, activeTab, jobId, limit, page]);
 
   const displayCandidates = useMemo(() => {
-    const sourceCandidates = Array.isArray(candidatesPayload.results) ? candidatesPayload.results : [];
-
-    if (activeTab === 'new') {
-      return sourceCandidates.filter((candidate) => isRecentlyUpdated(candidate.updated_at));
-    }
-
-    if (activeTab === 'matched') {
-      return sourceCandidates.filter((candidate) => Number(candidate.matching_score) >= 70);
-    }
-
-    if (activeTab === 'viewed') {
-      return sourceCandidates;
-    }
-
-    return sourceCandidates;
-  }, [activeTab, candidatesPayload.results]);
+    return Array.isArray(candidatesPayload.results) ? candidatesPayload.results : [];
+  }, [candidatesPayload.results]);
 
   const totalPages = useMemo(() => {
     if (!candidatesPayload.total || !candidatesPayload.limit) {
@@ -243,12 +232,31 @@ function Quanlyungvien() {
         <header className={styles['candidate-management-header']}>
           <h1>Màn hình quản lý ứng viên</h1>
           <p>
-            {jobId
-              ? `Đang hiển thị danh sách ứng viên phù hợp theo tin tuyển dụng #${jobId}.`
-              : 'Danh sách ứng viên tổng quát theo bộ lọc tìm kiếm.'}
+            {jobId 
+              ? `Đang hiển thị danh sách ứng viên nộp đơn vào tin tuyển dụng #${jobId}`
+              : 'Dưới đây là danh sách ứng viên đã nộp đơn ứng tuyển vào các tin tuyển dụng của công ty.'}
           </p>
 
           <div className={styles['candidate-management-search-wrap']}>
+            <div className={styles['job-filter-select']}>
+              <select 
+                value={jobId} 
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  const nextParams = new URLSearchParams(searchParams);
+                  if (nextId) nextParams.set('job_id', nextId);
+                  else nextParams.delete('job_id');
+                  setSearchParams(nextParams);
+                }}
+              >
+                <option value="">Tất cả tin tuyển dụng</option>
+                {companyJobs.map(job => (
+                  <option key={job.id} value={job.id}>
+                    {job.title}
+                  </option>
+                ))}
+              </select>
+            </div>
             <input
               type="search"
               placeholder="Tìm kiếm ứng viên theo tên hoặc kỹ năng..."
@@ -264,12 +272,12 @@ function Quanlyungvien() {
         <div className={styles['candidate-management-content']}>
           <div className={styles['candidate-list-column']}>
             <div className={styles['candidate-tabs']} role="tablist" aria-label="Candidate tabs">
-              {TAB_OPTIONS.map((tab) => (
+              {tabs.map((tab) => (
                 <button
-                  key={tab.value}
+                  key={tab.id}
                   type="button"
-                  className={activeTab === tab.value ? 'is-active' : ''}
-                  onClick={() => setActiveTab(tab.value)}
+                  className={activeTab === tab.id ? styles['is-active'] : ''}
+                  onClick={() => setActiveTab(tab.id)}
                 >
                   {tab.label}
                 </button>
@@ -315,13 +323,6 @@ function Quanlyungvien() {
                     <div className={styles['candidate-actions']}>
                       <button
                         type="button"
-                        onClick={() => navigate(buildCandidateEvaluationPath(candidate.candidate_id))}
-                      >
-                        Đánh giá
-                      </button>
-                      <button
-                        type="button"
-                        className={styles['secondary']}
                         onClick={() => {
                           const nextSearch = routeLocation.search || '';
                           navigate(`${buildCandidateDetailPath(candidate.candidate_id)}${nextSearch}`, {
@@ -329,7 +330,7 @@ function Quanlyungvien() {
                           });
                         }}
                       >
-                        Xem chi tiết
+                        Xem chi tiết hồ sơ
                       </button>
                     </div>
                   </div>

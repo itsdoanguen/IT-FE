@@ -16,6 +16,7 @@ import Chat from './pages/Chat/Chat';
 import AuthLogin from './pages/AuthLogin/AuthLogin';
 import AuthRegister from './pages/AuthRegister/AuthRegister';
 import Thongtincongty from './pages/thongtincongty/Thongtincongty';
+import Lichsucongviec from './pages/Lichsucongviec/Lichsucongviec';
 import Header from './components/Header';
 import {
   fetchCurrentUser,
@@ -127,6 +128,7 @@ function App() {
             <Route path={ROUTES.COMPANY_INFO} element={<Thongtincongty />} />
             <Route path={ROUTES.CANDIDATES} element={<Quanlyungvien />} />
             <Route path={ROUTES.CANDIDATE_DETAIL} element={<Chitiethosoungvien />} />
+            <Route path={ROUTES.CANDIDATE_EVALUATION} element={<Danhgiaungvien />} />
             <Route path={ROUTES.CANDIDATE_PROFILE} element={<Chitiethosoungvien />} />
             <Route path={ROUTES.CANDIDATE_EDIT} element={<Chinhsuahosoungvien />} />
             <Route path={ROUTES.JOB_DETAIL} element={<Chitiettuyendung />} />
@@ -134,6 +136,8 @@ function App() {
             <Route path={ROUTES.IN_DEVELOPMENT} element={<InDevelopment />} />
             <Route path={ROUTES.JOB_EDIT} element={<EditJob />} />
             <Route path={ROUTES.COMPANY_PROFILE} element={<CompanyProfile />} />
+            <Route path={ROUTES.MY_COMPANY_PROFILE} element={<CompanyProfile />} />
+            <Route path={ROUTES.JOB_HISTORY} element={<Lichsucongviec />} />
 
             <Route
               path={LEGACY_ROUTES.JOB_POST}
